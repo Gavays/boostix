@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-const WEB_APP_URL = 'https://boostix-o2ty.onrender.com';
+const WEB_APP_URL = 'https://boostix-app.onrender.com';
 const WELCOME_IMAGE = 'https://ibb.co/gLdY9MJj'; // Замените после загрузки
 
 bot.start((ctx) => {
