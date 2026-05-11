@@ -6,6 +6,7 @@ function App() {
   const [smartLink, setSmartLink] = useState('')
   const [detectedPlatform, setDetectedPlatform] = useState(null)
   const [suggestions, setSuggestions] = useState([])
+  const [services, setServices] = useState([])
   const [selectedService, setSelectedService] = useState(null)
   const [link, setLink] = useState('')
   const [quantity, setQuantity] = useState(100)
@@ -14,10 +15,23 @@ function App() {
   const [autoGoal, setAutoGoal] = useState('')
   const [autoPlan, setAutoPlan] = useState(null)
 
-  const API_URL = 'http://localhost:3001/api'
+  const API_URL = 'https://boostix-o2ty.onrender.com/api'
   const tg = typeof window !== 'undefined' && window.Telegram?.WebApp ? window.Telegram.WebApp : null
+  const userId = tg?.initDataUnsafe?.user?.id || 'Гость'
+  const userName = tg?.initDataUnsafe?.user?.first_name || 'Пользователь'
 
   useEffect(() => { tg?.ready() }, [tg])
+
+  useEffect(() => {
+    fetch(`${API_URL}/services`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          setServices(data.data.slice(0, 20))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const showAlert = (msg) => tg ? tg.showAlert(msg) : alert(msg)
 
@@ -39,10 +53,14 @@ function App() {
       return
     }
 
-    setSuggestions([
-      { type: '👥 Подписчики', price: 'от 390 ₽', serviceId: '1' },
-      { type: '👀 Просмотры', price: 'от 190 ₽', serviceId: '2' },
-      { type: '❤️ Реакции', price: 'от 150 ₽', serviceId: '3' },
+    const filtered = services.filter(s => 
+      s.name.toLowerCase().includes(detectedPlatform.toLowerCase())
+    ).slice(0, 5)
+    
+    setSuggestions(filtered.length > 0 ? filtered : [
+      { name: '👥 Подписчики', rate: '390.00', service: '118' },
+      { name: '👀 Просмотры', rate: '190.00', service: '118' },
+      { name: '❤️ Реакции', rate: '150.00', service: '391' },
     ])
   }
 
@@ -52,7 +70,7 @@ function App() {
       const res = await fetch(`${API_URL}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serviceId: selectedService.serviceId || selectedService.service, link, quantity })
+        body: JSON.stringify({ serviceId: selectedService.service || selectedService.serviceId, link, quantity })
       })
       const data = await res.json()
       if (data.success) setOrderStatus(`Заказ #${data.orderId} создан!`)
@@ -93,21 +111,14 @@ function App() {
             <div className="smart-hero">
               <span className="smart-icon">🎯</span>
               <h2>Умный подбор</h2>
-              <p>Вставьте ссылку — Boostix сам определит платформу и подберёт лучшие услуги для максимального роста</p>
+              <p>Вставьте ссылку — Boostix сам определит платформу и подберёт лучшие услуги</p>
             </div>
 
             <div className="smart-input-group">
               <span className="smart-input-icon">🔗</span>
-              <input 
-                type="text" 
-                placeholder="Вставьте ссылку на профиль или пост..." 
-                value={smartLink} 
-                onChange={(e) => setSmartLink(e.target.value)} 
-              />
+              <input type="text" placeholder="Вставьте ссылку на профиль или пост..." value={smartLink} onChange={(e) => setSmartLink(e.target.value)} />
             </div>
-            <button className="btn-primary" onClick={analyzeLink}>
-              🔍 Анализировать
-            </button>
+            <button className="btn-primary" onClick={analyzeLink}>🔍 Анализировать</button>
 
             {detectedPlatform && (
               <div className="smart-result">
@@ -118,25 +129,20 @@ function App() {
                     <div className="smart-result-platform">{detectedPlatform}</div>
                   </div>
                 </div>
-
                 <div className="smart-result-title">🎯 Рекомендуемые услуги:</div>
-
                 <div className="suggestions-list">
                   {suggestions.map((s, i) => (
-                    <div 
-                      key={i} 
-                      className={`suggestion-card ${i === 0 ? 'suggestion-best' : ''}`}
-                      onClick={() => { setSelectedService(s); setActiveTab('order'); setLink(smartLink) }}
-                    >
+                    <div key={i} className={`suggestion-card ${i === 0 ? 'suggestion-best' : ''}`}
+                      onClick={() => { setSelectedService(s); setActiveTab('order'); setLink(smartLink) }}>
                       <div className="suggestion-left">
-                        <span className="suggestion-icon">{s.type.split(' ')[0]}</span>
+                        <span className="suggestion-icon">{s.name?.split(' ')[0] || '📦'}</span>
                         <div>
-                          <div className="suggestion-name">{s.type.split(' ').slice(1).join(' ')}</div>
+                          <div className="suggestion-name">{s.name || s.type}</div>
                           <div className="suggestion-badge">{i === 0 ? '🔥 Лучший выбор' : '⚡ Быстрый старт'}</div>
                         </div>
                       </div>
                       <div className="suggestion-right">
-                        <div className="suggestion-price">{s.price}</div>
+                        <div className="suggestion-price">от {s.rate || '?'} ₽</div>
                         <div className="suggestion-arrow">›</div>
                       </div>
                     </div>
@@ -150,20 +156,21 @@ function App() {
         {activeTab === 'order' && (
           <div className="order-form">
             <h2>⚡ Быстрый заказ</h2>
-            
             <label>Услуга</label>
-            <div className="selected-service">
-              {selectedService ? selectedService.type || selectedService.name : 'Не выбрана'}
-            </div>
-            
+            <select className="service-select" value={selectedService?.service || ''} onChange={(e) => {
+              const s = services.find(s => s.service == e.target.value)
+              if (s) setSelectedService(s)
+            }}>
+              <option value="">Выберите услугу...</option>
+              {services.map((s, i) => (
+                <option key={i} value={s.service}>{s.name?.slice(0, 60)} — {s.rate} ₽</option>
+              ))}
+            </select>
             <label>Ссылка на профиль или пост</label>
             <input type="text" placeholder="https://t.me/username" value={link} onChange={(e) => setLink(e.target.value)} />
-            
             <label>Количество</label>
             <input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min={10} />
-            
             <button className="btn-primary" onClick={createOrder}>🚀 Оформить заказ</button>
-            
             {orderStatus && <div className="order-status">{orderStatus}</div>}
           </div>
         )}
@@ -172,15 +179,11 @@ function App() {
           <div className="auto-tab">
             <h2>🤖 Автопродвижение</h2>
             <p>Укажите цель и дневной бюджет — система сама всё сделает</p>
-            
             <label>Цель (подписчиков)</label>
             <input type="number" placeholder="Например: 5000" value={autoGoal} onChange={(e) => setAutoGoal(e.target.value)} />
-            
             <label>Бюджет в день (₽)</label>
             <input type="number" placeholder="Например: 2500" value={autoBudget} onChange={(e) => setAutoBudget(e.target.value)} />
-            
             <button className="btn-primary" onClick={createAutoPlan}>🤖 Запустить автопилот</button>
-
             {autoPlan && (
               <div className="auto-plan">
                 <div className="plan-row"><span>Цель</span><span>+{autoPlan.goal} подписчиков</span></div>
@@ -196,8 +199,8 @@ function App() {
         {activeTab === 'profile' && (
           <div className="profile">
             <h2>👤 Профиль</h2>
-            <p>ID: {tg?.initDataUnsafe?.user?.id || 'Гость'}</p>
-            <p>Имя: {tg?.initDataUnsafe?.user?.first_name || 'Пользователь'}</p>
+            <p>ID: {userId}</p>
+            <p>Имя: {userName}</p>
             <div className="profile-balance">💰 Баланс: 0 ₽</div>
             <button className="btn-primary">💳 Пополнить баланс</button>
           </div>

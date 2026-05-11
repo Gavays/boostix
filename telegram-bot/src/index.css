@@ -284,6 +284,29 @@ body {
   transform: scale(0.98);
 }
 
+/* Service Select */
+.service-select {
+  width: 100%;
+  padding: 14px;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 14px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.service-select:focus {
+  outline: none;
+  border-color: #7c3aed;
+}
+
+.service-select option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
 /* Order Form */
 .order-form h2,
 .auto-tab h2,
