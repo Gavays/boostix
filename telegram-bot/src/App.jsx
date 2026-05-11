@@ -14,24 +14,37 @@ function App() {
   const [autoBudget, setAutoBudget] = useState('')
   const [autoGoal, setAutoGoal] = useState('')
   const [autoPlan, setAutoPlan] = useState(null)
+  const [platformFilter, setPlatformFilter] = useState('Все')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
   const tg = typeof window !== 'undefined' && window.Telegram?.WebApp ? window.Telegram.WebApp : null
   const userId = tg?.initDataUnsafe?.user?.id || 'Гость'
   const userName = tg?.initDataUnsafe?.user?.first_name || 'Пользователь'
 
-  useEffect(() => { tg?.ready() }, [tg])
+  useEffect(() => { 
+    if (tg) {
+      tg.ready()
+      tg.expand()
+    }
+  }, [tg])
 
   useEffect(() => {
     fetch(`${API_URL}/services`)
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
-          setServices(data.data.slice(0, 20))
+          setServices(data.data)
         }
       })
       .catch(() => {})
   }, [])
+
+  const filteredServices = services.filter(s => {
+    const matchPlatform = platformFilter === 'Все' || s.name.toLowerCase().includes(platformFilter.toLowerCase())
+    const matchSearch = !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())
+    return matchPlatform && matchSearch
+  })
 
   const showAlert = (msg) => tg ? tg.showAlert(msg) : alert(msg)
 
@@ -156,20 +169,57 @@ function App() {
         {activeTab === 'order' && (
           <div className="order-form">
             <h2>⚡ Быстрый заказ</h2>
-            <label>Услуга</label>
-            <select className="service-select" value={selectedService?.service || ''} onChange={(e) => {
-              const s = services.find(s => s.service == e.target.value)
-              if (s) setSelectedService(s)
-            }}>
-              <option value="">Выберите услугу...</option>
-              {services.map((s, i) => (
-                <option key={i} value={s.service}>{s.name?.slice(0, 60)} — {s.rate} ₽</option>
+            
+            <label>Платформа</label>
+            <div className="platform-filter">
+              {['Все', 'Telegram', 'Instagram', 'YouTube', 'TikTok', 'ВКонтакте'].map(p => (
+                <button 
+                  key={p}
+                  className={`platform-chip ${platformFilter === p ? 'active' : ''}`}
+                  onClick={() => setPlatformFilter(p)}
+                >{p}</button>
               ))}
-            </select>
+            </div>
+
+            <label>Поиск услуги</label>
+            <input 
+              type="text" 
+              placeholder="Например: подписчики Telegram..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+
+            {searchQuery && (
+              <div className="services-dropdown">
+                {filteredServices.slice(0, 10).map((s, i) => (
+                  <div 
+                    key={i} 
+                    className={`service-option ${selectedService?.service === s.service ? 'selected' : ''}`}
+                    onClick={() => { setSelectedService(s); setSearchQuery('') }}
+                  >
+                    <div className="service-option-name">{s.name.slice(0, 70)}</div>
+                    <div className="service-option-price">{s.rate} ₽</div>
+                  </div>
+                ))}
+                {filteredServices.length === 0 && (
+                  <div className="service-option-empty">Ничего не найдено</div>
+                )}
+              </div>
+            )}
+
+            {selectedService && (
+              <div className="selected-service-badge">
+                ✅ {selectedService.name.slice(0, 60)} — {selectedService.rate} ₽
+                <span className="remove-service" onClick={() => setSelectedService(null)}>✕</span>
+              </div>
+            )}
+
             <label>Ссылка на профиль или пост</label>
             <input type="text" placeholder="https://t.me/username" value={link} onChange={(e) => setLink(e.target.value)} />
+            
             <label>Количество</label>
             <input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min={10} />
+            
             <button className="btn-primary" onClick={createOrder}>🚀 Оформить заказ</button>
             {orderStatus && <div className="order-status">{orderStatus}</div>}
           </div>
