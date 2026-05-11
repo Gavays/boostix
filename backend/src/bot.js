@@ -1,17 +1,7 @@
 const { Telegraf } = require('telegraf');
-const { SocksProxyAgent } = require('socks-proxy-agent');
 require('dotenv').config();
 
-// Укажите прокси. Если у вас свой — замените данные ниже.
-// Для примера используется публичный SOCKS5 прокси.
-const proxyUrl = 'socks5://127.0.0.1:9150'; // ЗАМЕНИТЕ НА СВОЙ
-const agent = new SocksProxyAgent(proxyUrl);
-
-const bot = new Telegraf(process.env.BOT_TOKEN, {
-  telegram: {
-    agent: agent,
-  },
-});
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Команда /start
 bot.start((ctx) => {
