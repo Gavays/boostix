@@ -3,24 +3,31 @@ require('dotenv').config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Команда /start
+const WEB_APP_URL = 'https://boostix-o2ty.onrender.com';
+const WELCOME_IMAGE = 'https://ibb.co/gLdY9MJj'; // Замените после загрузки
+
 bot.start((ctx) => {
-  ctx.reply(
-    '🤖 *Добро пожаловать в Boostix!*\n\n' +
-    'Умное продвижение в соцсетях — быстро, безопасно, выгодно.\n\n' +
-    'Нажмите кнопку ниже, чтобы открыть панель управления:',
+  ctx.replyWithPhoto(
+    WELCOME_IMAGE,
     {
+      caption: 
+        '🤖 *Добро пожаловать в Boostix!*\n\n' +
+        '🎯 Умный подбор услуг\n' +
+        '📊 Детальная аналитика\n' +
+        '🤖 Автопродвижение\n' +
+        '👥 Реферальная система\n' +
+        '🛡 Гарантия от банов\n\n' +
+        'Нажмите кнопку ниже, чтобы начать:',
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: '🚀 Открыть Boostix', web_app: { url: 'https://your-app-url.com' } }],
+          [{ text: '🚀 Открыть Boostix', web_app: { url: WEB_APP_URL } }],
         ],
       },
     },
   );
 });
 
-// Команда /help
 bot.help((ctx) => {
   ctx.reply(
     '🎯 *Возможности Boostix:*\n\n' +
@@ -32,12 +39,10 @@ bot.help((ctx) => {
   );
 });
 
-// Запуск бота
 bot.launch(() => {
   console.log('🤖 Telegram бот запущен');
 });
 
-// Обработка ошибок
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
