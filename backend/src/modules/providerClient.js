@@ -45,12 +45,15 @@ class ProviderClient {
       link: link,
       quantity: quantity,
     });
+    console.log('Создан заказ, ответ TmSMM:', JSON.stringify(result));
     return { orderId: result.order };
   }
 
   // Проверить статус одного заказа (см. метод 'status' в доке)
   async getOrderStatus(orderId) {
+    console.log('Запрос статуса для orderId:', orderId, 'тип:', typeof orderId);
     const result = await this._request('status', { order: orderId });
+    console.log('Ответ от TmSMM (status):', JSON.stringify(result));
     return result;
   }
 }
