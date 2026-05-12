@@ -25,8 +25,8 @@ function App() {
   const [selectedService, setSelectedService] = useState(null)
   const [link, setLink] = useState('')
   const [quantity, setQuantity] = useState(100)
-  const [orderStatus, setOrderStatus] = useState(null)
   const [step, setStep] = useState('platforms')
+  const [modal, setModal] = useState(null)
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
@@ -45,7 +45,12 @@ function App() {
       .catch(() => {})
   }, [])
 
-  const showAlert = (msg) => tg ? tg.showAlert(msg) : alert(msg)
+  const showModal = (type, title, message) => {
+    setModal({ type, title, message })
+    if (type === 'success') {
+      setTimeout(() => setModal(null), 3000)
+    }
+  }
 
   const getStep = (q) => {
     if (q >= 10000) return 1000
@@ -55,14 +60,14 @@ function App() {
   }
 
   const analyzeLink = () => {
-    if (!smartLink.trim()) { showAlert('Вставьте ссылку'); return }
+    if (!smartLink.trim()) { showModal('error', 'Ошибка', 'Вставьте ссылку'); return }
     let platform = null
     if (smartLink.includes('t.me') || smartLink.includes('telegram')) platform = 'Telegram'
     else if (smartLink.includes('youtube.com') || smartLink.includes('youtu.be')) platform = 'YouTube'
     else if (smartLink.includes('instagram.com')) platform = 'Instagram'
     else if (smartLink.includes('tiktok.com')) platform = 'TikTok'
     else if (smartLink.includes('vk.com')) platform = 'ВКонтакте'
-    else { showAlert('Не удалось определить платформу'); return }
+    else { showModal('error', 'Ошибка', 'Не удалось определить платформу'); return }
 
     setDetectedPlatform(platform)
     setSmartLink('')
@@ -101,7 +106,19 @@ function App() {
   }
 
   const createOrder = async () => {
-    if (!selectedService || !link || !quantity) { showAlert('Заполните все поля'); return }
+    if (!selectedService || !link || !quantity) {
+      showModal('error', 'Ошибка', 'Заполните все поля: выберите услугу, укажите ссылку и количество.')
+      return
+    }
+    if (quantity < (selectedService.min || 10)) {
+      showModal('error', 'Ошибка', `Минимальное количество: ${selectedService.min || 10}`)
+      return
+    }
+    if (quantity > (selectedService.max || 100000)) {
+      showModal('error', 'Ошибка', `Максимальное количество: ${selectedService.max || 100000}`)
+      return
+    }
+
     try {
       const res = await fetch(`${API_URL}/orders`, {
         method: 'POST',
@@ -110,16 +127,21 @@ function App() {
       })
       const data = await res.json()
       if (data.success) {
-        setOrderStatus(`Заказ #${data.orderId} создан!`)
+        showModal('success', '✅ Заказ успешно создан!', `Номер заказа: #${data.orderId}\nУслуга: ${selectedService.name.slice(0, 50)}\nКоличество: ${quantity}\nСсылка: ${link}`)
         setLink('')
         setQuantity(100)
         setSelectedService(null)
         setSelectedPlatform(null)
         setStep('platforms')
-        setTimeout(() => setOrderStatus(null), 5000)
-      } else showAlert(`Ошибка: ${data.error}`)
-    } catch { showAlert('Ошибка соединения с сервером') }
+      } else {
+        showModal('error', '❌ Ошибка', data.error || 'Не удалось создать заказ. Попробуйте позже.')
+      }
+    } catch {
+      showModal('error', '❌ Ошибка соединения', 'Не удалось связаться с сервером. Проверьте интернет и попробуйте снова.')
+    }
   }
+
+  const closeModal = () => setModal(null)
 
   return (
     <div className="app">
@@ -265,7 +287,6 @@ function App() {
                 </div>
 
                 <button className="btn-primary" onClick={createOrder}>🚀 Оформить заказ</button>
-                {orderStatus && <div className="order-status">{orderStatus}</div>}
               </>
             )}
           </div>
@@ -281,6 +302,19 @@ function App() {
           </div>
         )}
       </div>
+
+      {modal && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className={`modal-card ${modal.type}`} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon">{modal.type === 'success' ? '✅' : '❌'}</div>
+            <div className="modal-title">{modal.title}</div>
+            <div className="modal-message">{modal.message}</div>
+            <button className="btn-primary" onClick={closeModal} style={{ marginTop: 12 }}>
+              {modal.type === 'success' ? 'Отлично' : 'Закрыть'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
