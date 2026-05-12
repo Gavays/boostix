@@ -33,7 +33,15 @@ function App() {
   const userName = initUser?.first_name || 'Пользователь'
 
   useEffect(() => {
-    if (tg) { tg.ready(); tg.expand() }
+    if (tg) {
+      tg.ready()
+      tg.expand()
+      // Фиксируем высоту, чтобы ничего не прыгало
+      if (tg.viewportHeight) {
+        document.body.style.height = tg.viewportHeight + 'px'
+        document.body.style.overflow = 'hidden'
+      }
+    }
     fetch(`${API_URL}/services`)
       .then(res => res.json())
       .then(data => { if (data.success && Array.isArray(data.data)) setServices(data.data) })
