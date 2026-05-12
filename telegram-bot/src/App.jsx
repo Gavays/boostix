@@ -15,6 +15,15 @@ const PLATFORMS = [
   { id: 'likee', name: 'Likee', icon: '/icons/boostix-likee.png' },
 ]
 
+const LINK_RULES = {
+  telegram: ['t.me', 'telegram.org', 'telegram'],
+  youtube: ['youtube.com', 'youtu.be', 'youtube'],
+  instagram: ['instagram.com', 'instagram'],
+  tiktok: ['tiktok.com', 'tiktok', 'vm.tiktok'],
+  vkontakte: ['vk.com', 'vk.ru', 'vkontakte'],
+  likee: ['likee.com', 'likee', 'l.likee'],
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState('smart')
   const [smartLink, setSmartLink] = useState('')
@@ -49,6 +58,12 @@ function App() {
     setModal({ type, title, message })
   }
 
+  const validateLink = (link, platform) => {
+    const allowed = LINK_RULES[platform]
+    if (!allowed) return true
+    return allowed.some(domain => link.toLowerCase().includes(domain))
+  }
+
   const getStep = (q) => {
     if (q >= 10000) return 1000
     if (q >= 1000) return 100
@@ -59,16 +74,17 @@ function App() {
   const analyzeLink = () => {
     if (!smartLink.trim()) { showModal('error', 'Ошибка', 'Вставьте ссылку'); return }
     let platform = null
-    if (smartLink.includes('t.me') || smartLink.includes('telegram')) platform = 'Telegram'
-    else if (smartLink.includes('youtube.com') || smartLink.includes('youtu.be')) platform = 'YouTube'
-    else if (smartLink.includes('instagram.com')) platform = 'Instagram'
-    else if (smartLink.includes('tiktok.com')) platform = 'TikTok'
-    else if (smartLink.includes('vk.com')) platform = 'ВКонтакте'
+    if (smartLink.includes('t.me') || smartLink.includes('telegram')) platform = 'telegram'
+    else if (smartLink.includes('youtube.com') || smartLink.includes('youtu.be')) platform = 'youtube'
+    else if (smartLink.includes('instagram.com')) platform = 'instagram'
+    else if (smartLink.includes('tiktok.com')) platform = 'tiktok'
+    else if (smartLink.includes('vk.com')) platform = 'vkontakte'
+    else if (smartLink.includes('likee.com')) platform = 'likee'
     else { showModal('error', 'Ошибка', 'Не удалось определить платформу'); return }
 
     setDetectedPlatform(platform)
     setSmartLink('')
-    const filtered = services.filter(s => s.name.toLowerCase().includes(platform.toLowerCase())).slice(0, 5)
+    const filtered = services.filter(s => s.name.toLowerCase().includes(PLATFORMS.find(p => p.id === platform)?.name.toLowerCase())).slice(0, 5)
     setSuggestions(filtered.length > 0 ? filtered : [
       { name: '👥 Подписчики', rate: '390.00', service: '118' },
       { name: '👀 Просмотры', rate: '190.00', service: '118' },
@@ -83,7 +99,7 @@ function App() {
   }
 
   const filteredServices = selectedPlatform
-    ? services.filter(s => s.name.toLowerCase().includes(selectedPlatform.toLowerCase()))
+    ? services.filter(s => s.name.toLowerCase().includes(PLATFORMS.find(p => p.id === selectedPlatform)?.name.toLowerCase()))
     : []
 
   const handlePlatformClick = (platformId) => {
@@ -113,6 +129,12 @@ function App() {
     }
     if (quantity > (selectedService.max || 100000)) {
       showModal('error', 'Ошибка', `Максимальное количество: ${selectedService.max || 100000}`)
+      return
+    }
+
+    const platformId = selectedPlatform
+    if (platformId && !validateLink(link, platformId)) {
+      showModal('error', '❌ Неверная ссылка', `Ссылка должна вести на ${PLATFORMS.find(p => p.id === platformId)?.name || 'выбранную платформу'}. Проверьте URL.`)
       return
     }
 
@@ -172,7 +194,7 @@ function App() {
                   <span className="smart-result-icon">✅</span>
                   <div>
                     <div className="smart-result-label">Платформа</div>
-                    <div className="smart-result-platform">{detectedPlatform}</div>
+                    <div className="smart-result-platform">{PLATFORMS.find(p => p.id === detectedPlatform)?.name}</div>
                   </div>
                 </div>
                 <div className="suggestions-list">
