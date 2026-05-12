@@ -30,6 +30,16 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+app.get('/api/fix-db', async (req, res) => {
+  try {
+    await pool.query('ALTER TABLE orders ALTER COLUMN user_id TYPE BIGINT');
+    await pool.query('ALTER TABLE orders ALTER COLUMN amount DROP NOT NULL');
+    res.json({ success: true, message: 'Типы колонок исправлены' });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
 async function start() {
   try {
     await initDatabase();
