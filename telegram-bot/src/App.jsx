@@ -59,8 +59,8 @@ function App() {
       .catch(() => {})
   }, [])
 
-  const showModal = (type, title, message) => {
-    setModal({ type, title, message })
+  const showModal = (type, title, message, action) => {
+    setModal({ type, title, message, action })
   }
 
   const validateLink = (link, platform) => {
@@ -147,13 +147,12 @@ function App() {
       return
     }
 
-    // Проверяем баланс
     try {
       const balanceRes = await fetch(`${API_URL}/orders/user/balance/${userId}`)
       const balanceData = await balanceRes.json()
       
       if (balanceData.success && balanceData.balance <= 0) {
-        showModal('error', '💰 Недостаточно средств', 'Ваш баланс пуст. Пожалуйста, пополните баланс для создания заказа.')
+        showModal('error', '💰 Недостаточно средств', 'Ваш баланс пуст. Пополните его для создания заказа.', { text: '💳 Пополнить баланс', link: 'https://t.me/boostix_smm_bot' })
         return
       }
     } catch {
@@ -378,7 +377,12 @@ function App() {
             <div className="modal-icon">{modal.type === 'success' ? '✅' : '❌'}</div>
             <div className="modal-title">{modal.title}</div>
             <div className="modal-message">{modal.message}</div>
-            <button className="btn-primary" onClick={closeModal} style={{ marginTop: 12 }}>
+            {modal.action && (
+              <a href={modal.action.link} target="_blank" className="btn-primary" style={{ marginTop: 12, textDecoration: 'none', display: 'block' }}>
+                {modal.action.text}
+              </a>
+            )}
+            <button className="btn-primary" onClick={closeModal} style={{ marginTop: 8 }}>
               {modal.type === 'success' ? 'Отлично' : 'Закрыть'}
             </button>
           </div>
