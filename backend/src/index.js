@@ -30,6 +30,15 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+app.get('/api/debug-orders', async (req, res) => {
+  try {
+    const result = await pool.query("SELECT id, provider_order_id FROM orders LIMIT 10");
+    res.json({ success: true, orders: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 async function start() {
   try {
     await initDatabase();
