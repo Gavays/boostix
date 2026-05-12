@@ -30,15 +30,6 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.get('/api/fix-fk', async (req, res) => {
-  try {
-    await pool.query('ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_user_id_fkey');
-    res.json({ success: true, message: 'Внешний ключ удалён' });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
-});
-
 async function start() {
   try {
     await initDatabase();
