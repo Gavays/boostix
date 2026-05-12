@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+require('./cron');
 
 const { pool, initDatabase } = require('./config/database');
 const servicesRouter = require('./routes/services');

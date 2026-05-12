@@ -8,7 +8,7 @@ CREATE TABLE users (
     photo_url TEXT,
     balance DECIMAL(10, 2) DEFAULT 0.00,
     total_spent DECIMAL(10, 2) DEFAULT 0.00,
-    role VARCHAR(20) DEFAULT 'user', -- user, admin
+    role VARCHAR(20) DEFAULT 'user',
     is_blocked BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -18,7 +18,7 @@ CREATE TABLE users (
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    platform VARCHAR(50) NOT NULL, -- telegram, youtube, instagram, tiktok, vkontakte
+    platform VARCHAR(50) NOT NULL,
     icon VARCHAR(10),
     sort_order INT DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
@@ -28,14 +28,14 @@ CREATE TABLE categories (
 -- Таблица услуг (синхронизируется с провайдером)
 CREATE TABLE services (
     id SERIAL PRIMARY KEY,
-    provider_id VARCHAR(100) NOT NULL, -- ID услуги у провайдера
+    provider_id VARCHAR(100) NOT NULL,
     category_id INT REFERENCES categories(id) ON DELETE SET NULL,
     name VARCHAR(500) NOT NULL,
     platform VARCHAR(50) NOT NULL,
-    type VARCHAR(100), -- followers, likes, views, reactions, reposts
-    provider_price DECIMAL(10, 4) NOT NULL, -- цена провайдера
-    our_price DECIMAL(10, 4) NOT NULL, -- наша цена с наценкой
-    markup_percent INT DEFAULT 50, -- процент наценки
+    type VARCHAR(100),
+    provider_price DECIMAL(10, 4) NOT NULL,
+    our_price DECIMAL(10, 4) NOT NULL,
+    markup_percent INT DEFAULT 50,
     min_order INT DEFAULT 10,
     max_order INT DEFAULT 1000000,
     description TEXT,
@@ -50,17 +50,17 @@ CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
     service_id INT REFERENCES services(id) ON DELETE SET NULL,
-    provider_order_id VARCHAR(255), -- ID заказа у провайдера
+    provider_order_id VARCHAR(255),
     link TEXT NOT NULL,
     quantity INT NOT NULL,
-    amount DECIMAL(10, 2) NOT NULL, -- сумма списания
-    provider_amount DECIMAL(10, 2), -- себестоимость
-    profit DECIMAL(10, 2), -- прибыль
-    status VARCHAR(50) DEFAULT 'pending', -- pending, in_progress, completed, partial, failed, cancelled, refunded
-    start_count INT, -- начальное значение (для отслеживания)
-    current_count INT, -- текущее значение
-    remains INT, -- сколько осталось накрутить
-    provider_response TEXT, -- ответ провайдера (JSON)
+    amount DECIMAL(10, 2) NOT NULL,
+    provider_amount DECIMAL(10, 2),
+    profit DECIMAL(10, 2),
+    status VARCHAR(50) DEFAULT 'pending',
+    start_count INT,
+    current_count INT,
+    remains INT,
+    provider_response TEXT,
     error_message TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
@@ -72,14 +72,14 @@ CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
     order_id INT REFERENCES orders(id) ON DELETE SET NULL,
-    type VARCHAR(20) NOT NULL, -- deposit, withdrawal, debit, refund, bonus
+    type VARCHAR(20) NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
     balance_before DECIMAL(10, 2),
     balance_after DECIMAL(10, 2),
-    payment_method VARCHAR(50), -- telegram_stars, crypto, card, manual
-    payment_id VARCHAR(255), -- внешний ID платежа
+    payment_method VARCHAR(50),
+    payment_id VARCHAR(255),
     description TEXT,
-    status VARCHAR(20) DEFAULT 'completed', -- pending, completed, failed
+    status VARCHAR(20) DEFAULT 'completed',
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -87,10 +87,10 @@ CREATE TABLE transactions (
 CREATE TABLE promocodes (
     id SERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
-    type VARCHAR(20) NOT NULL, -- percent, fixed
+    type VARCHAR(20) NOT NULL,
     value DECIMAL(10, 2) NOT NULL,
     min_amount DECIMAL(10, 2) DEFAULT 0,
-    max_uses INT DEFAULT 0, -- 0 = безлимит
+    max_uses INT DEFAULT 0,
     used_count INT DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
     expires_at TIMESTAMP,
@@ -113,7 +113,7 @@ CREATE TABLE api_logs (
     action VARCHAR(50) NOT NULL,
     request_data TEXT,
     response_data TEXT,
-    status VARCHAR(20), -- success, error
+    status VARCHAR(20),
     error_message TEXT,
     duration_ms INT,
     created_at TIMESTAMP DEFAULT NOW()
@@ -138,6 +138,21 @@ CREATE TABLE sessions (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Таблица планов автопродвижения
+CREATE TABLE auto_plans (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    platform VARCHAR(50) NOT NULL,
+    link TEXT NOT NULL DEFAULT '',
+    goal INT NOT NULL,
+    daily_budget DECIMAL(10, 2) NOT NULL,
+    spent DECIMAL(10, 2) DEFAULT 0,
+    completed INT DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Индексы для быстрой работы
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_status ON orders(status);
@@ -149,6 +164,8 @@ CREATE INDEX idx_services_category ON services(category_id);
 CREATE INDEX idx_services_provider_id ON services(provider_id);
 CREATE INDEX idx_api_logs_action ON api_logs(action);
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX idx_auto_plans_user_id ON auto_plans(user_id);
+CREATE INDEX idx_auto_plans_status ON auto_plans(status);
 
 -- Триггер для автообновления updated_at
 CREATE OR REPLACE FUNCTION update_timestamp()
@@ -168,6 +185,9 @@ CREATE TRIGGER update_services_timestamp BEFORE UPDATE ON services
 CREATE TRIGGER update_orders_timestamp BEFORE UPDATE ON orders
     FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
+CREATE TRIGGER update_auto_plans_timestamp BEFORE UPDATE ON auto_plans
+    FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
 -- Начальные данные
 INSERT INTO categories (name, platform, icon, sort_order) VALUES
     ('Telegram', 'telegram', '✈️', 1),
@@ -177,7 +197,7 @@ INSERT INTO categories (name, platform, icon, sort_order) VALUES
     ('ВКонтакте', 'vkontakte', '📱', 5);
 
 INSERT INTO settings (key, value, description) VALUES
-    ('site_name', 'Soc-Buyer', 'Название сайта'),
+    ('site_name', 'Boostix', 'Название сайта'),
     ('default_markup', '50', 'Стандартная наценка в %'),
     ('min_deposit', '10', 'Минимальный депозит'),
     ('max_deposit', '50000', 'Максимальный депозит'),
