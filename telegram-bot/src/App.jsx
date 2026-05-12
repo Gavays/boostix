@@ -327,10 +327,13 @@ function App() {
             <p>ID: {userId}</p>
             <p>Имя: {userName}</p>
             <div className="profile-balance">💰 Баланс: 0 ₽</div>
-            <button className="btn-primary" onClick={loadOrders} style={{ marginTop: 8 }}>🔄 Обновить историю</button>
+            <button className="btn-primary">💳 Пополнить баланс</button>
 
             <div className="orders-history">
-              <h3>📋 История заказов</h3>
+              <div className="orders-history-header">
+                <h3>📋 История заказов</h3>
+                <button className="btn-refresh" onClick={loadOrders}>🔄</button>
+              </div>
               {orders.length === 0 && <p className="orders-empty">Нет заказов</p>}
               {orders.map((o, i) => (
                 <div key={i} className="order-card">
@@ -344,15 +347,13 @@ function App() {
                     </span>
                   </div>
                   <div className="order-card-body">
-                    <div className="order-link">{o.link?.slice(0, 40)}</div>
+                    <div className="order-link">{o.link?.slice(0, 50)}</div>
                     <div className="order-quantity">{o.quantity} шт</div>
                   </div>
                   <div className="order-card-date">{new Date(o.created_at).toLocaleString('ru-RU')}</div>
                 </div>
               ))}
             </div>
-
-            <button className="btn-primary">💳 Пополнить баланс</button>
           </div>
         )}
       </div>
