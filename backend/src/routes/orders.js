@@ -54,7 +54,7 @@ router.post('/refresh/:userId', async (req, res) => {
 
     for (const order of orders) {
       try {
-        const status = await providerClient.getOrderStatus(parseInt(order.provider_order_id));
+       const status = await providerClient.getOrderStatus(order.provider_order_id);
         console.log('Статус от TmSMM:', JSON.stringify(status))
         
         let newStatus = order.status;
