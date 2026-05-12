@@ -3,6 +3,8 @@ import './index.css'
 
 const tg = typeof window !== 'undefined' && window.Telegram?.WebApp ? window.Telegram.WebApp : null
 const initUser = tg?.initDataUnsafe?.user
+const initialUserId = initUser?.id || 'Гость'
+const initialUserName = initUser?.first_name || 'Пользователь'
 
 const PLATFORMS = [
   { id: 'telegram', name: 'Telegram', icon: '/icons/boostix-telegram.png' },
@@ -24,24 +26,30 @@ function App() {
   const [link, setLink] = useState('')
   const [quantity, setQuantity] = useState(100)
   const [orderStatus, setOrderStatus] = useState(null)
-  const [autoBudget, setAutoBudget] = useState('')
-  const [autoGoal, setAutoGoal] = useState('')
-  const [autoPlan, setAutoPlan] = useState(null)
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
-  const userId = initUser?.id || 'Гость'
-  const userName = initUser?.first_name || 'Пользователь'
+  const userId = initialUserId
+  const userName = initialUserName
 
   useEffect(() => {
     if (tg) {
       tg.ready()
       tg.expand()
-      // Фиксируем высоту, чтобы ничего не прыгало
-      if (tg.viewportHeight) {
-        document.body.style.height = tg.viewportHeight + 'px'
-        document.body.style.overflow = 'hidden'
+
+      const user = tg.initDataUnsafe?.user
+      if (user?.id) {
+        fetch(`${API_URL}/orders/user/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            telegram_id: user.id,
+            first_name: user.first_name,
+            username: user.username
+          })
+        }).catch(() => {})
       }
     }
+
     fetch(`${API_URL}/services`)
       .then(res => res.json())
       .then(data => { if (data.success && Array.isArray(data.data)) setServices(data.data) })
@@ -61,6 +69,8 @@ function App() {
     else { showAlert('Не удалось определить платформу'); return }
 
     setDetectedPlatform(platform)
+    setSmartLink('')
+
     const filtered = services.filter(s => s.name.toLowerCase().includes(platform.toLowerCase())).slice(0, 5)
     setSuggestions(filtered.length > 0 ? filtered : [
       { name: '👥 Подписчики', rate: '390.00', service: '118' },
@@ -69,9 +79,20 @@ function App() {
     ])
   }
 
+  const selectSuggestion = (s) => {
+    setSelectedService(s)
+    setSelectedPlatform(null)
+    setActiveTab('order')
+  }
+
   const filteredServices = selectedPlatform
     ? services.filter(s => s.name.toLowerCase().includes(selectedPlatform.toLowerCase()))
     : []
+
+  const selectPlatformAndService = (platformId) => {
+    setSelectedPlatform(platformId)
+    setSelectedService(null)
+  }
 
   const createOrder = async () => {
     if (!selectedService || !link || !quantity) { showAlert('Заполните все поля'); return }
@@ -82,19 +103,16 @@ function App() {
         body: JSON.stringify({ serviceId: selectedService.service, link, quantity })
       })
       const data = await res.json()
-      if (data.success) setOrderStatus(`Заказ #${data.orderId} создан!`)
+      if (data.success) {
+        setOrderStatus(`Заказ #${data.orderId} создан!`)
+        setLink('')
+        setQuantity(100)
+        setSelectedService(null)
+        setSelectedPlatform(null)
+        setTimeout(() => setOrderStatus(null), 5000)
+      }
       else showAlert(`Ошибка: ${data.error}`)
     } catch { showAlert('Ошибка соединения с сервером') }
-  }
-
-  const createAutoPlan = () => {
-    if (!autoBudget || !autoGoal) { showAlert('Укажите бюджет и цель'); return }
-    setAutoPlan({
-      goal: parseInt(autoGoal),
-      dailyBudget: parseInt(autoBudget),
-      estimatedDays: Math.ceil(parseInt(autoGoal) / (parseInt(autoBudget) / 200)),
-    })
-    showAlert('План создан!')
   }
 
   return (
@@ -107,7 +125,6 @@ function App() {
       <div className="tabs">
         <button className={activeTab === 'smart' ? 'active' : ''} onClick={() => setActiveTab('smart')}>🎯 Умный</button>
         <button className={activeTab === 'order' ? 'active' : ''} onClick={() => setActiveTab('order')}>⚡ Заказ</button>
-        <button className={activeTab === 'auto' ? 'active' : ''} onClick={() => setActiveTab('auto')}>🤖 Авто</button>
         <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>👤 Профиль</button>
       </div>
 
@@ -136,7 +153,7 @@ function App() {
                 <div className="suggestions-list">
                   {suggestions.map((s, i) => (
                     <div key={i} className={`suggestion-card ${i === 0 ? 'suggestion-best' : ''}`}
-                      onClick={() => { setSelectedService(s); setActiveTab('order'); setLink(smartLink) }}>
+                      onClick={() => selectSuggestion(s)}>
                       <div className="suggestion-left">
                         <span className="suggestion-icon">{s.name?.split(' ')[0] || '📦'}</span>
                         <div>
@@ -162,7 +179,7 @@ function App() {
             <div className="platforms-grid">
               {PLATFORMS.map(p => (
                 <div key={p.id} className={`platform-card ${selectedPlatform === p.id ? 'active' : ''}`}
-                  onClick={() => { setSelectedPlatform(p.id); setSelectedService(null) }}>
+                  onClick={() => selectPlatformAndService(p.id)}>
                   <img src={p.icon} alt={p.name} className="platform-card-icon-img" />
                   <span className="platform-card-name">{p.name}</span>
                 </div>
@@ -190,25 +207,6 @@ function App() {
                   </>
                 )}
                 {orderStatus && <div className="order-status">{orderStatus}</div>}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'auto' && (
-          <div className="auto-tab">
-            <h2>🤖 Автопродвижение</h2>
-            <p>Укажите цель и дневной бюджет</p>
-            <label>Цель (подписчиков)</label>
-            <input type="number" placeholder="5000" value={autoGoal} onChange={(e) => setAutoGoal(e.target.value)} />
-            <label>Бюджет в день (₽)</label>
-            <input type="number" placeholder="2500" value={autoBudget} onChange={(e) => setAutoBudget(e.target.value)} />
-            <button className="btn-primary" onClick={createAutoPlan}>🤖 Запустить автопилот</button>
-            {autoPlan && (
-              <div className="auto-plan">
-                <div className="plan-row"><span>Цель</span><span>+{autoPlan.goal}</span></div>
-                <div className="plan-row"><span>Бюджет/день</span><span>до {autoPlan.dailyBudget} ₽</span></div>
-                <div className="plan-row"><span>Прогноз</span><span className="highlight">{autoPlan.estimatedDays} дней</span></div>
               </div>
             )}
           </div>

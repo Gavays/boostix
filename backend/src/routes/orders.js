@@ -36,6 +36,32 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// POST /api/user/register — регистрация пользователя из Telegram
+router.post('/user/register', async (req, res) => {
+  const { telegram_id, first_name, username } = req.body;
+
+  if (!telegram_id) {
+    return res.status(400).json({ success: false, error: 'telegram_id обязателен' });
+  }
+
+  try {
+    const existing = await pool.query('SELECT * FROM users WHERE telegram_id = $1', [telegram_id]);
+
+    if (existing.rows.length > 0) {
+      return res.json({ success: true, user: existing.rows[0] });
+    }
+
+    const result = await pool.query(
+      'INSERT INTO users (telegram_id, first_name, username, balance) VALUES ($1, $2, $3, 0) RETURNING *',
+      [telegram_id, first_name || 'Пользователь', username || '']
+    );
+
+    res.json({ success: true, user: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/auto/create — создать план автопродвижения
 router.post('/auto/create', async (req, res) => {
   const { userId, platform, link, goal, dailyBudget } = req.body;
