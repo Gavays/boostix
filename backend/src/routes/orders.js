@@ -17,11 +17,11 @@ router.post('/', async (req, res) => {
   try {
     const result = await providerClient.createOrder(serviceId, link, quantity);
     
-    // Сохраняем заказ в БД, если userId передан и это число
-    if (userId && !isNaN(parseInt(userId))) {
+    // Сохраняем заказ в БД, если userId передан и не Гость
+    if (userId && userId !== 'Гость') {
       await pool.query(
         'INSERT INTO orders (user_id, provider_order_id, link, quantity, status) VALUES ($1, $2, $3, $4, $5)',
-        [parseInt(userId), result.orderId, link, quantity, 'pending']
+        [userId, result.orderId, link, quantity, 'pending']
       );
     }
 
@@ -50,7 +50,7 @@ router.get('/user/orders/:userId', async (req, res) => {
   try {
     const result = await pool.query(
       'SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50',
-      [parseInt(req.params.userId)]
+      [req.params.userId]
     );
     res.json({ success: true, orders: result.rows });
   } catch (error) {

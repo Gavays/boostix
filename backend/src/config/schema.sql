@@ -48,12 +48,12 @@ CREATE TABLE services (
 -- Таблица заказов
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    user_id BIGINT NOT NULL,
     service_id INT REFERENCES services(id) ON DELETE SET NULL,
     provider_order_id VARCHAR(255),
     link TEXT NOT NULL,
     quantity INT NOT NULL,
-    amount DECIMAL(10, 2) NOT NULL,
+    amount DECIMAL(10, 2),
     provider_amount DECIMAL(10, 2),
     profit DECIMAL(10, 2),
     status VARCHAR(50) DEFAULT 'pending',
