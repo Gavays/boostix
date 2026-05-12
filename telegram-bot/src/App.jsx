@@ -27,7 +27,7 @@ function App() {
   const [link, setLink] = useState('')
   const [quantity, setQuantity] = useState(100)
   const [orderStatus, setOrderStatus] = useState(null)
-  const [step, setStep] = useState('platforms') // 'platforms' | 'services' | 'order'
+  const [step, setStep] = useState('platforms')
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
@@ -47,6 +47,13 @@ function App() {
   }, [])
 
   const showAlert = (msg) => tg ? tg.showAlert(msg) : alert(msg)
+
+  const getStep = (q) => {
+    if (q >= 10000) return 1000
+    if (q >= 1000) return 100
+    if (q >= 100) return 50
+    return 10
+  }
 
   const analyzeLink = () => {
     if (!smartLink.trim()) { showAlert('Вставьте ссылку'); return }
@@ -174,7 +181,6 @@ function App() {
 
         {activeTab === 'order' && (
           <div className="order-form">
-            {/* Шаг 1: Выбор платформы */}
             {step === 'platforms' && (
               <>
                 <h2>Выберите платформу</h2>
@@ -191,7 +197,6 @@ function App() {
               </>
             )}
 
-            {/* Шаг 2: Список услуг */}
             {step === 'services' && selectedPlatform && (
               <>
                 <div className="step-header">
@@ -216,7 +221,6 @@ function App() {
               </>
             )}
 
-            {/* Шаг 3: Оформление заказа */}
             {step === 'order' && selectedService && (
               <>
                 <div className="step-header">
@@ -245,7 +249,16 @@ function App() {
                 <input type="text" placeholder="Ссылка на профиль, видео или пост" value={link} onChange={(e) => setLink(e.target.value)} />
 
                 <label>Количество</label>
-                <input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min={selectedService.min || 10} max={selectedService.max || 100000} />
+                <div className="quantity-control">
+                  <button className="quantity-btn" onClick={() => setQuantity(q => Math.max((selectedService.min || 10), q - getStep(q)))} disabled={quantity <= (selectedService.min || 10)}>−</button>
+                  <input type="number" value={quantity} onChange={(e) => {
+                    let val = parseInt(e.target.value) || (selectedService.min || 10)
+                    if (val < (selectedService.min || 10)) val = selectedService.min || 10
+                    if (val > (selectedService.max || 100000)) val = selectedService.max || 100000
+                    setQuantity(val)
+                  }} min={selectedService.min || 10} max={selectedService.max || 100000} />
+                  <button className="quantity-btn" onClick={() => setQuantity(q => Math.min((selectedService.max || 100000), q + getStep(q)))} disabled={quantity >= (selectedService.max || 100000)}>+</button>
+                </div>
                 <p className="quantity-hint">От {selectedService.min || 10} до {selectedService.max || 100000}</p>
 
                 <div className="order-total">
