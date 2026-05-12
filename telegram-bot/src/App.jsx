@@ -36,6 +36,7 @@ function App() {
   const [quantity, setQuantity] = useState(100)
   const [step, setStep] = useState('platforms')
   const [modal, setModal] = useState(null)
+  const [orders, setOrders] = useState([])
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
@@ -69,6 +70,15 @@ function App() {
     if (q >= 1000) return 100
     if (q >= 100) return 50
     return 10
+  }
+
+  const loadOrders = () => {
+    if (userId !== 'Гость') {
+      fetch(`${API_URL}/orders/user/orders/${userId}`)
+        .then(res => res.json())
+        .then(data => { if (data.success) setOrders(data.orders) })
+        .catch(() => {})
+    }
   }
 
   const analyzeLink = () => {
@@ -142,7 +152,7 @@ function App() {
       const res = await fetch(`${API_URL}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serviceId: selectedService.service, link, quantity })
+        body: JSON.stringify({ serviceId: selectedService.service, link, quantity, userId: userId !== 'Гость' ? userId : null })
       })
       const data = await res.json()
       if (data.success) {
@@ -172,7 +182,7 @@ function App() {
       <div className="tabs">
         <button className={activeTab === 'smart' ? 'active' : ''} onClick={() => setActiveTab('smart')}>🎯 Умный</button>
         <button className={activeTab === 'order' ? 'active' : ''} onClick={() => { setActiveTab('order'); setStep('platforms'); setSelectedPlatform(null); setSelectedService(null) }}>⚡ Заказ</button>
-        <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>👤 Профиль</button>
+        <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => { setActiveTab('profile'); loadOrders() }}>👤 Профиль</button>
       </div>
 
       <div className="tab-content">
@@ -317,6 +327,31 @@ function App() {
             <p>ID: {userId}</p>
             <p>Имя: {userName}</p>
             <div className="profile-balance">💰 Баланс: 0 ₽</div>
+            <button className="btn-primary" onClick={loadOrders} style={{ marginTop: 8 }}>🔄 Обновить историю</button>
+
+            <div className="orders-history">
+              <h3>📋 История заказов</h3>
+              {orders.length === 0 && <p className="orders-empty">Нет заказов</p>}
+              {orders.map((o, i) => (
+                <div key={i} className="order-card">
+                  <div className="order-card-header">
+                    <span className="order-id">#{o.provider_order_id}</span>
+                    <span className={`order-status-badge ${o.status}`}>
+                      {o.status === 'pending' && '⏳ В обработке'}
+                      {o.status === 'completed' && '✅ Выполнен'}
+                      {o.status === 'failed' && '❌ Ошибка'}
+                      {!['pending','completed','failed'].includes(o.status) && '🔄 ' + o.status}
+                    </span>
+                  </div>
+                  <div className="order-card-body">
+                    <div className="order-link">{o.link?.slice(0, 40)}</div>
+                    <div className="order-quantity">{o.quantity} шт</div>
+                  </div>
+                  <div className="order-card-date">{new Date(o.created_at).toLocaleString('ru-RU')}</div>
+                </div>
+              ))}
+            </div>
+
             <button className="btn-primary">💳 Пополнить баланс</button>
           </div>
         )}

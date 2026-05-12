@@ -5,7 +5,7 @@ const { pool } = require('../config/database');
 
 // POST /api/orders — создать заказ
 router.post('/', async (req, res) => {
-  const { serviceId, link, quantity } = req.body;
+  const { serviceId, link, quantity, userId } = req.body;
 
   if (!serviceId || !link || !quantity) {
     return res.status(400).json({ 
@@ -16,6 +16,15 @@ router.post('/', async (req, res) => {
 
   try {
     const result = await providerClient.createOrder(serviceId, link, quantity);
+    
+    // Сохраняем заказ в БД
+    if (userId) {
+      await pool.query(
+        'INSERT INTO orders (user_id, provider_order_id, link, quantity, status) VALUES ($1, $2, $3, $4, $5)',
+        [userId, result.orderId, link, quantity, 'pending']
+      );
+    }
+
     res.json({ 
       success: true, 
       orderId: result.orderId,
@@ -36,7 +45,20 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/user/register — регистрация пользователя из Telegram
+// GET /api/user/orders/:userId — история заказов пользователя
+router.get('/user/orders/:userId', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50',
+      [req.params.userId]
+    );
+    res.json({ success: true, orders: result.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/user/register — регистрация пользователя
 router.post('/user/register', async (req, res) => {
   const { telegram_id, first_name, username } = req.body;
 
