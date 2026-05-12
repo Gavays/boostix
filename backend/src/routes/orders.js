@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
 // GET /api/orders/:id — статус заказа
 router.get('/:id', async (req, res) => {
   try {
-    const status = await providerClient.getOrderStatus(parseInt(req.params.id));
+    const status = await providerClient.getOrderStatus(req.params.id);
     res.json({ success: true, data: status });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -54,18 +54,22 @@ router.post('/refresh/:userId', async (req, res) => {
 
     for (const order of orders) {
       try {
-       const status = await providerClient.getOrderStatus(order.provider_order_id);
-        console.log('Статус от TmSMM:', JSON.stringify(status))
+        const status = await providerClient.getOrderStatus(order.provider_order_id);
         
         let newStatus = order.status;
-        const s = status.status || status;
-        if (typeof s === 'string') {
-          const sl = s.toLowerCase();
-          if (sl.includes('complete')) newStatus = 'completed';
-          else if (sl.includes('cancel')) newStatus = 'cancelled';
-          else if (sl.includes('progress')) newStatus = 'in_progress';
-          else if (sl.includes('pending')) newStatus = 'pending';
-          else if (sl.includes('partial')) newStatus = 'completed';
+        
+        if (status.error) {
+          newStatus = 'failed';
+        } else {
+          const s = status.status;
+          if (typeof s === 'string') {
+            const sl = s.toLowerCase();
+            if (sl.includes('complete')) newStatus = 'completed';
+            else if (sl.includes('cancel')) newStatus = 'cancelled';
+            else if (sl.includes('progress')) newStatus = 'in_progress';
+            else if (sl.includes('pending')) newStatus = 'pending';
+            else if (sl.includes('partial')) newStatus = 'completed';
+          }
         }
         
         if (newStatus !== order.status) {
@@ -74,7 +78,9 @@ router.post('/refresh/:userId', async (req, res) => {
             [newStatus, order.id]
           );
         }
-      } catch (err) {}
+      } catch (err) {
+        // ignore
+      }
     }
 
     res.json({ success: true, message: 'Статусы обновлены' });
@@ -91,6 +97,24 @@ router.get('/user/orders/:userId', async (req, res) => {
       [req.params.userId]
     );
     res.json({ success: true, orders: result.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/user/balance/:userId — баланс пользователя
+router.get('/user/balance/:userId', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT balance FROM users WHERE telegram_id = $1',
+      [req.params.userId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.json({ success: true, balance: 0 });
+    }
+    
+    res.json({ success: true, balance: parseFloat(result.rows[0].balance) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

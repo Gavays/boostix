@@ -137,22 +137,27 @@ function App() {
 
   const createOrder = async () => {
     if (!selectedService || !link || !quantity) {
-      showModal('error', 'Ошибка', 'Заполните все поля: выберите услугу, укажите ссылку и количество.')
-      return
-    }
-    if (quantity < (selectedService.min || 10)) {
-      showModal('error', 'Ошибка', `Минимальное количество: ${selectedService.min || 10}`)
-      return
-    }
-    if (quantity > (selectedService.max || 100000)) {
-      showModal('error', 'Ошибка', `Максимальное количество: ${selectedService.max || 100000}`)
+      showModal('error', 'Ошибка', 'Заполните все поля')
       return
     }
 
     const platformId = selectedPlatform
     if (platformId && !validateLink(link, platformId)) {
-      showModal('error', '❌ Неверная ссылка', `Ссылка должна вести на ${PLATFORMS.find(p => p.id === platformId)?.name || 'выбранную платформу'}. Проверьте URL.`)
+      showModal('error', '❌ Неверная ссылка', `Ссылка должна вести на ${PLATFORMS.find(p => p.id === platformId)?.name}. Проверьте URL.`)
       return
+    }
+
+    // Проверяем баланс
+    try {
+      const balanceRes = await fetch(`${API_URL}/orders/user/balance/${userId}`)
+      const balanceData = await balanceRes.json()
+      
+      if (balanceData.success && balanceData.balance <= 0) {
+        showModal('error', '💰 Недостаточно средств', 'Ваш баланс пуст. Пожалуйста, пополните баланс для создания заказа.')
+        return
+      }
+    } catch {
+      // ignore
     }
 
     try {
@@ -163,17 +168,17 @@ function App() {
       })
       const data = await res.json()
       if (data.success) {
-        showModal('success', '✅ Заказ успешно создан!', `Номер заказа: #${data.orderId}\nУслуга: ${selectedService.name.slice(0, 50)}\nКоличество: ${quantity}\nСсылка: ${link}`)
+        showModal('success', '✅ Заказ успешно создан!', `Номер: #${data.orderId}\nУслуга: ${selectedService.name.slice(0, 50)}\nКол-во: ${quantity}`)
         setLink('')
         setQuantity(100)
         setSelectedService(null)
         setSelectedPlatform(null)
         setStep('platforms')
       } else {
-        showModal('error', '❌ Ошибка', data.error || 'Не удалось создать заказ. Попробуйте позже.')
+        showModal('error', '❌ Ошибка', data.error || 'Не удалось создать заказ')
       }
     } catch {
-      showModal('error', '❌ Ошибка соединения', 'Не удалось связаться с сервером. Проверьте интернет и попробуйте снова.')
+      showModal('error', '❌ Ошибка соединения', 'Не удалось связаться с сервером')
     }
   }
 

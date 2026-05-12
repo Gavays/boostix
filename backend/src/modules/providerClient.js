@@ -27,33 +27,26 @@ class ProviderClient {
     }
   }
 
-  // Получить баланс (см. метод 'balance' в доке)
   async getBalance() {
     const result = await this._request('balance');
     return { balance: parseFloat(result.balance), currency: result.currency };
   }
 
-  // Получить все услуги (см. метод 'services' в доке)
   async getServices() {
     return await this._request('services');
   }
 
-  // Создать новый заказ (см. метод 'add' в доке)
   async createOrder(serviceId, link, quantity) {
     const result = await this._request('add', {
       service: serviceId,
       link: link,
       quantity: quantity,
     });
-    console.log('Создан заказ, ответ TmSMM:', JSON.stringify(result));
     return { orderId: result.order };
   }
 
-  // Проверить статус одного заказа (см. метод 'status' в доке)
   async getOrderStatus(orderId) {
-    console.log('Запрос статуса для orderId:', orderId, 'тип:', typeof orderId);
     const result = await this._request('status', { order: orderId });
-    console.log('Ответ от TmSMM (status):', JSON.stringify(result));
     return result;
   }
 }
