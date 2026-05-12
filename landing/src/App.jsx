@@ -1,6 +1,8 @@
 import './index.css'
 
 function App() {
+  const BOT_LINK = 'https://t.me/boostix_smm_bot'
+
   return (
     <div className="landing">
       {/* Главный экран */}
@@ -12,7 +14,7 @@ function App() {
             Boostix сам подбирает стратегию, распределяет бюджет и защищает аккаунт.<br/>
             Вы просто указываете цель — мы делаем остальное.
           </p>
-          <a href="#" className="btn-hero">🚀 Запустить рост</a>
+          <a href={BOT_LINK} target="_blank" className="btn-hero">🚀 Запустить рост</a>
           <div className="hero-tags">
             <span>🎯 Умный подбор</span>
             <span>·</span>
@@ -204,32 +206,32 @@ function App() {
       </section>
 
       {/* Реферальная система */}
-<section className="referral-section">
-  <div className="container">
-    <span className="feature-badge center">👥 Реферальная программа</span>
-    <h2>Зарабатывайте на <span className="highlight">приглашениях</span></h2>
-    <div className="referral-levels">
-      <div className="ref-level">
-        <div className="ref-level-num">1 уровень</div>
-        <div className="ref-percent">10%</div>
-        <p>от пополнений ваших прямых рефералов</p>
-      </div>
-      <div className="ref-arrow">→</div>
-      <div className="ref-level">
-        <div className="ref-level-num">2 уровень</div>
-        <div className="ref-percent">3%</div>
-        <p>от пополнений рефералов ваших рефералов</p>
-      </div>
-      <div className="ref-arrow">→</div>
-      <div className="ref-level">
-        <div className="ref-level-num">3 уровень</div>
-        <div className="ref-percent">2%</div>
-        <p>от пополнений на третьей линии</p>
-      </div>
-    </div>
-    <p className="referral-note">💰 Доход начисляется на баланс автоматически. Выводите или тратьте на продвижение.</p>
-  </div>
-</section>
+      <section className="referral-section">
+        <div className="container">
+          <span className="feature-badge center">👥 Реферальная программа</span>
+          <h2>Зарабатывайте на <span className="highlight">приглашениях</span></h2>
+          <div className="referral-levels">
+            <div className="ref-level">
+              <div className="ref-level-num">1 уровень</div>
+              <div className="ref-percent">10%</div>
+              <p>от пополнений ваших прямых рефералов</p>
+            </div>
+            <div className="ref-arrow">→</div>
+            <div className="ref-level">
+              <div className="ref-level-num">2 уровень</div>
+              <div className="ref-percent">3%</div>
+              <p>от пополнений рефералов ваших рефералов</p>
+            </div>
+            <div className="ref-arrow">→</div>
+            <div className="ref-level">
+              <div className="ref-level-num">3 уровень</div>
+              <div className="ref-percent">2%</div>
+              <p>от пополнений на третьей линии</p>
+            </div>
+          </div>
+          <p className="referral-note">💰 Доход начисляется на баланс автоматически. Выводите или тратьте на продвижение.</p>
+        </div>
+      </section>
 
       {/* Отзывы */}
       <section className="reviews">
@@ -260,7 +262,7 @@ function App() {
         <div className="container">
           <h2>Готовы к <span className="highlight">умному росту</span>?</h2>
           <p>Присоединяйтесь к 15 000+ SMM-специалистов и блогеров, которые уже растут с Boostix</p>
-          <a href="#" className="btn-hero">🤖 Запустить Boostix</a>
+          <a href={BOT_LINK} target="_blank" className="btn-hero">🤖 Запустить Boostix</a>
         </div>
       </section>
 
