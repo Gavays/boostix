@@ -4,9 +4,11 @@ require('dotenv').config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const WEB_APP_URL = 'https://boostix-app.onrender.com';
-const WELCOME_IMAGE = 'https://ibb.co/gLdY9MJj'; // Замените после загрузки
+const WELCOME_IMAGE = 'https://ibb.co/gLdY9MJj'; // Замените на прямую ссылку
 
 bot.start((ctx) => {
+  const user = ctx.from;
+
   ctx.replyWithPhoto(
     WELCOME_IMAGE,
     {
@@ -21,7 +23,10 @@ bot.start((ctx) => {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: '🚀 Открыть Boostix', web_app: { url: WEB_APP_URL } }],
+          [{
+            text: '🚀 Открыть Boostix',
+            web_app: { url: `${WEB_APP_URL}?tg_id=${user.id}&tg_name=${encodeURIComponent(user.first_name)}` }
+          }],
         ],
       },
     },

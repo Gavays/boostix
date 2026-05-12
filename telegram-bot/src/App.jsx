@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react'
 import './index.css'
 
+// Получаем данные из URL если есть
+const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+const urlTgId = urlParams.get('tg_id')
+const urlTgName = urlParams.get('tg_name')
+
 const tg = typeof window !== 'undefined' && window.Telegram?.WebApp ? window.Telegram.WebApp : null
 const user = tg?.initDataUnsafe?.user
-const userId = user?.id ? String(user.id) : 'Гость'
-const userName = user?.first_name || 'Пользователь'
+const userId = user?.id ? String(user.id) : (urlTgId || 'Гость')
+const userName = user?.first_name ? String(user.first_name) : (urlTgName ? decodeURIComponent(urlTgName) : 'Пользователь')
 
 const PLATFORMS = [
   { id: 'telegram', name: 'Telegram', icon: '/icons/boostix-telegram.png' },
