@@ -1,10 +1,11 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react'
 import './index.css'
 
 const tg = typeof window !== 'undefined' && window.Telegram?.WebApp ? window.Telegram.WebApp : null
-const initUser = tg?.initDataUnsafe?.user
-const initialUserId = initUser?.id || 'Гость'
-const initialUserName = initUser?.first_name || 'Пользователь'
+const user = tg?.initDataUnsafe?.user
+const userId = user?.id ? String(user.id) : 'Гость'
+const userName = user?.first_name || 'Пользователь'
 
 const PLATFORMS = [
   { id: 'telegram', name: 'Telegram', icon: '/icons/boostix-telegram.png' },
@@ -26,30 +27,19 @@ function App() {
   const [link, setLink] = useState('')
   const [quantity, setQuantity] = useState(100)
   const [orderStatus, setOrderStatus] = useState(null)
+  const [step, setStep] = useState('platforms') // 'platforms' | 'services' | 'order'
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
-  const userId = initialUserId
-  const userName = initialUserName
 
   useEffect(() => {
-    if (tg) {
-      tg.ready()
-      tg.expand()
-
-      const user = tg.initDataUnsafe?.user
-      if (user?.id) {
-        fetch(`${API_URL}/orders/user/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            telegram_id: user.id,
-            first_name: user.first_name,
-            username: user.username
-          })
-        }).catch(() => {})
-      }
+    if (tg) { tg.ready(); tg.expand() }
+    if (user?.id) {
+      fetch(`${API_URL}/orders/user/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
+      }).catch(() => {})
     }
-
     fetch(`${API_URL}/services`)
       .then(res => res.json())
       .then(data => { if (data.success && Array.isArray(data.data)) setServices(data.data) })
@@ -70,7 +60,6 @@ function App() {
 
     setDetectedPlatform(platform)
     setSmartLink('')
-
     const filtered = services.filter(s => s.name.toLowerCase().includes(platform.toLowerCase())).slice(0, 5)
     setSuggestions(filtered.length > 0 ? filtered : [
       { name: '👥 Подписчики', rate: '390.00', service: '118' },
@@ -81,7 +70,7 @@ function App() {
 
   const selectSuggestion = (s) => {
     setSelectedService(s)
-    setSelectedPlatform(null)
+    setStep('order')
     setActiveTab('order')
   }
 
@@ -89,9 +78,20 @@ function App() {
     ? services.filter(s => s.name.toLowerCase().includes(selectedPlatform.toLowerCase()))
     : []
 
-  const selectPlatformAndService = (platformId) => {
+  const handlePlatformClick = (platformId) => {
     setSelectedPlatform(platformId)
     setSelectedService(null)
+    setStep('services')
+  }
+
+  const handleServiceClick = (service) => {
+    setSelectedService(service)
+    setStep('order')
+  }
+
+  const handleBack = () => {
+    if (step === 'order') setStep('services')
+    else if (step === 'services') { setStep('platforms'); setSelectedPlatform(null) }
   }
 
   const createOrder = async () => {
@@ -109,9 +109,9 @@ function App() {
         setQuantity(100)
         setSelectedService(null)
         setSelectedPlatform(null)
+        setStep('platforms')
         setTimeout(() => setOrderStatus(null), 5000)
-      }
-      else showAlert(`Ошибка: ${data.error}`)
+      } else showAlert(`Ошибка: ${data.error}`)
     } catch { showAlert('Ошибка соединения с сервером') }
   }
 
@@ -124,7 +124,7 @@ function App() {
 
       <div className="tabs">
         <button className={activeTab === 'smart' ? 'active' : ''} onClick={() => setActiveTab('smart')}>🎯 Умный</button>
-        <button className={activeTab === 'order' ? 'active' : ''} onClick={() => setActiveTab('order')}>⚡ Заказ</button>
+        <button className={activeTab === 'order' ? 'active' : ''} onClick={() => { setActiveTab('order'); setStep('platforms'); setSelectedPlatform(null); setSelectedService(null) }}>⚡ Заказ</button>
         <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>👤 Профиль</button>
       </div>
 
@@ -174,40 +174,87 @@ function App() {
 
         {activeTab === 'order' && (
           <div className="order-form">
-            <h2>Выберите платформу</h2>
-            <p className="order-subtitle">Нажмите на иконку, чтобы увидеть услуги</p>
-            <div className="platforms-grid">
-              {PLATFORMS.map(p => (
-                <div key={p.id} className={`platform-card ${selectedPlatform === p.id ? 'active' : ''}`}
-                  onClick={() => selectPlatformAndService(p.id)}>
-                  <img src={p.icon} alt={p.name} className="platform-card-icon-img" />
-                  <span className="platform-card-name">{p.name}</span>
-                </div>
-              ))}
-            </div>
-            {selectedPlatform && (
-              <div className="services-section">
-                <h3>Услуги {PLATFORMS.find(p => p.id === selectedPlatform)?.name}</h3>
-                <div className="services-scroll">
-                  {filteredServices.slice(0, 20).map((s, i) => (
-                    <div key={i} className={`service-mini-card ${selectedService?.service === s.service ? 'selected' : ''}`}
-                      onClick={() => setSelectedService(s)}>
-                      <div className="service-mini-name">{s.name.slice(0, 70)}</div>
-                      <div className="service-mini-price">{s.rate} ₽</div>
+            {/* Шаг 1: Выбор платформы */}
+            {step === 'platforms' && (
+              <>
+                <h2>Выберите платформу</h2>
+                <p className="order-subtitle">Нажмите на иконку соцсети</p>
+                <div className="platforms-grid">
+                  {PLATFORMS.map(p => (
+                    <div key={p.id} className="platform-card"
+                      onClick={() => handlePlatformClick(p.id)}>
+                      <img src={p.icon} alt={p.name} className="platform-card-icon-img" />
+                      <span className="platform-card-name">{p.name}</span>
                     </div>
                   ))}
                 </div>
-                {selectedService && (
-                  <>
-                    <label>Ссылка</label>
-                    <input type="text" placeholder="https://t.me/username" value={link} onChange={(e) => setLink(e.target.value)} />
-                    <label>Количество</label>
-                    <input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min={10} />
-                    <button className="btn-primary" onClick={createOrder}>🚀 Оформить заказ</button>
-                  </>
-                )}
+              </>
+            )}
+
+            {/* Шаг 2: Список услуг */}
+            {step === 'services' && selectedPlatform && (
+              <>
+                <div className="step-header">
+                  <button className="back-btn" onClick={handleBack}>← Назад</button>
+                  <h2>{PLATFORMS.find(p => p.id === selectedPlatform)?.name}</h2>
+                </div>
+                <div className="services-scroll">
+                  {filteredServices.map((s, i) => (
+                    <div key={i} className="service-detail-card"
+                      onClick={() => handleServiceClick(s)}>
+                      <div className="service-detail-name">{s.name}</div>
+                      <div className="service-detail-info">
+                        <span className="service-detail-price">{s.rate} ₽</span>
+                        <span className="service-detail-unit">/ 1000 шт</span>
+                      </div>
+                      <div className="service-detail-limits">
+                        от {s.min || 10} до {s.max || 100000} шт
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Шаг 3: Оформление заказа */}
+            {step === 'order' && selectedService && (
+              <>
+                <div className="step-header">
+                  <button className="back-btn" onClick={handleBack}>← Назад</button>
+                  <h2>Оформить заказ</h2>
+                </div>
+                <div className="selected-service-card">
+                  <div className="selected-service-title">{selectedService.name}</div>
+                  <div className="selected-service-meta">
+                    <div className="meta-item">
+                      <span className="meta-label">ЦЕНА</span>
+                      <span className="meta-value">{selectedService.rate} ₽/1000</span>
+                    </div>
+                    <div className="meta-item">
+                      <span className="meta-label">МИН.</span>
+                      <span className="meta-value">{selectedService.min || 10}</span>
+                    </div>
+                    <div className="meta-item">
+                      <span className="meta-label">МАКС.</span>
+                      <span className="meta-value">{selectedService.max || 100000}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <label>Ссылка</label>
+                <input type="text" placeholder="Ссылка на профиль, видео или пост" value={link} onChange={(e) => setLink(e.target.value)} />
+
+                <label>Количество</label>
+                <input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min={selectedService.min || 10} max={selectedService.max || 100000} />
+                <p className="quantity-hint">От {selectedService.min || 10} до {selectedService.max || 100000}</p>
+
+                <div className="order-total">
+                  Итого к оплате: <span className="highlight">~{((selectedService.rate / 1000) * quantity).toFixed(2)} ₽</span>
+                </div>
+
+                <button className="btn-primary" onClick={createOrder}>🚀 Оформить заказ</button>
                 {orderStatus && <div className="order-status">{orderStatus}</div>}
-              </div>
+              </>
             )}
           </div>
         )}

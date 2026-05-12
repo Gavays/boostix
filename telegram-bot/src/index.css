@@ -318,6 +318,127 @@ body {
   color: #ccc;
 }
 
+/* Step Header */
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #7c3aed;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* Service Detail Card */
+.service-detail-card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.service-detail-card:active {
+  background: #222;
+}
+
+.service-detail-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #ccc;
+  line-height: 1.4;
+}
+
+.service-detail-info {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.service-detail-price {
+  font-size: 20px;
+  font-weight: 800;
+  color: #a78bfa;
+}
+
+.service-detail-unit {
+  font-size: 13px;
+  color: #888;
+}
+
+.service-detail-limits {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Selected Service Card */
+.selected-service-card {
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid #7c3aed;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.selected-service-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #a78bfa;
+  margin-bottom: 12px;
+}
+
+.selected-service-meta {
+  display: flex;
+  gap: 20px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meta-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.meta-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Quantity hint */
+.quantity-hint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* Order total */
+.order-total {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: 12px;
+  padding: 12px;
+  background: #1a1a1a;
+  border-radius: 10px;
+}
+
 /* Services section */
 .services-section {
   margin-top: 20px;
@@ -330,7 +451,7 @@ body {
 }
 
 .services-scroll {
-  max-height: 250px;
+  max-height: 400px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
