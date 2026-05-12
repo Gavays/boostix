@@ -21,6 +21,15 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', message: 'Boostix API работает' });
 });
 
+app.get('/api/users', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM users');
+    res.json({ success: true, count: result.rows.length, users: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 async function start() {
   try {
     await initDatabase();
