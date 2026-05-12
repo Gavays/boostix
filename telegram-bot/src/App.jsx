@@ -47,9 +47,6 @@ function App() {
 
   const showModal = (type, title, message) => {
     setModal({ type, title, message })
-    if (type === 'success') {
-      setTimeout(() => setModal(null), 3000)
-    }
   }
 
   const getStep = (q) => {
