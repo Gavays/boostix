@@ -14,7 +14,10 @@ const PLATFORMS = [
 ]
 
 function App() {
-  const [activeTab, setActiveTab] = useState('order')
+  const [activeTab, setActiveTab] = useState('smart')
+  const [smartLink, setSmartLink] = useState('')
+  const [detectedPlatform, setDetectedPlatform] = useState(null)
+  const [suggestions, setSuggestions] = useState([])
   const [services, setServices] = useState([])
   const [selectedPlatform, setSelectedPlatform] = useState(null)
   const [selectedService, setSelectedService] = useState(null)
@@ -30,23 +33,37 @@ function App() {
   const userName = initUser?.first_name || 'Пользователь'
 
   useEffect(() => {
-    if (tg) {
-      tg.ready()
-      tg.expand()
-    }
+    if (tg) { tg.ready(); tg.expand() }
     fetch(`${API_URL}/services`)
       .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.data)) setServices(data.data)
-      })
+      .then(data => { if (data.success && Array.isArray(data.data)) setServices(data.data) })
       .catch(() => {})
   }, [])
+
+  const showAlert = (msg) => tg ? tg.showAlert(msg) : alert(msg)
+
+  const analyzeLink = () => {
+    if (!smartLink.trim()) { showAlert('Вставьте ссылку'); return }
+    let platform = null
+    if (smartLink.includes('t.me') || smartLink.includes('telegram')) platform = 'Telegram'
+    else if (smartLink.includes('youtube.com') || smartLink.includes('youtu.be')) platform = 'YouTube'
+    else if (smartLink.includes('instagram.com')) platform = 'Instagram'
+    else if (smartLink.includes('tiktok.com')) platform = 'TikTok'
+    else if (smartLink.includes('vk.com')) platform = 'ВКонтакте'
+    else { showAlert('Не удалось определить платформу'); return }
+
+    setDetectedPlatform(platform)
+    const filtered = services.filter(s => s.name.toLowerCase().includes(platform.toLowerCase())).slice(0, 5)
+    setSuggestions(filtered.length > 0 ? filtered : [
+      { name: '👥 Подписчики', rate: '390.00', service: '118' },
+      { name: '👀 Просмотры', rate: '190.00', service: '118' },
+      { name: '❤️ Реакции', rate: '150.00', service: '391' },
+    ])
+  }
 
   const filteredServices = selectedPlatform
     ? services.filter(s => s.name.toLowerCase().includes(selectedPlatform.toLowerCase()))
     : []
-
-  const showAlert = (msg) => tg ? tg.showAlert(msg) : alert(msg)
 
   const createOrder = async () => {
     if (!selectedService || !link || !quantity) { showAlert('Заполните все поля'); return }
@@ -80,46 +97,81 @@ function App() {
       </div>
 
       <div className="tabs">
+        <button className={activeTab === 'smart' ? 'active' : ''} onClick={() => setActiveTab('smart')}>🎯 Умный</button>
         <button className={activeTab === 'order' ? 'active' : ''} onClick={() => setActiveTab('order')}>⚡ Заказ</button>
         <button className={activeTab === 'auto' ? 'active' : ''} onClick={() => setActiveTab('auto')}>🤖 Авто</button>
         <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>👤 Профиль</button>
       </div>
 
       <div className="tab-content">
+        {activeTab === 'smart' && (
+          <div className="smart-tab">
+            <div className="smart-hero">
+              <span className="smart-icon">🎯</span>
+              <h2>Умный подбор</h2>
+              <p>Вставьте ссылку — Boostix определит платформу и подберёт услуги</p>
+            </div>
+            <div className="smart-input-group">
+              <span className="smart-input-icon">🔗</span>
+              <input type="text" placeholder="Вставьте ссылку..." value={smartLink} onChange={(e) => setSmartLink(e.target.value)} />
+            </div>
+            <button className="btn-primary" onClick={analyzeLink}>🔍 Анализировать</button>
+            {detectedPlatform && (
+              <div className="smart-result">
+                <div className="smart-result-header">
+                  <span className="smart-result-icon">✅</span>
+                  <div>
+                    <div className="smart-result-label">Платформа</div>
+                    <div className="smart-result-platform">{detectedPlatform}</div>
+                  </div>
+                </div>
+                <div className="suggestions-list">
+                  {suggestions.map((s, i) => (
+                    <div key={i} className={`suggestion-card ${i === 0 ? 'suggestion-best' : ''}`}
+                      onClick={() => { setSelectedService(s); setActiveTab('order'); setLink(smartLink) }}>
+                      <div className="suggestion-left">
+                        <span className="suggestion-icon">{s.name?.split(' ')[0] || '📦'}</span>
+                        <div>
+                          <div className="suggestion-name">{s.name || s.type}</div>
+                          <div className="suggestion-badge">{i === 0 ? '🔥 Лучший выбор' : '⚡ Старт'}</div>
+                        </div>
+                      </div>
+                      <div className="suggestion-right">
+                        <span className="suggestion-price">от {s.rate || '?'} ₽</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'order' && (
           <div className="order-form">
             <h2>Выберите платформу</h2>
-            <p className="order-subtitle">Нажмите на иконку соцсети, чтобы увидеть доступные услуги</p>
-
+            <p className="order-subtitle">Нажмите на иконку, чтобы увидеть услуги</p>
             <div className="platforms-grid">
               {PLATFORMS.map(p => (
-                <div 
-                  key={p.id}
-                  className={`platform-card ${selectedPlatform === p.id ? 'active' : ''}`}
-                  onClick={() => { setSelectedPlatform(p.id); setSelectedService(null) }}
-                >
+                <div key={p.id} className={`platform-card ${selectedPlatform === p.id ? 'active' : ''}`}
+                  onClick={() => { setSelectedPlatform(p.id); setSelectedService(null) }}>
                   <img src={p.icon} alt={p.name} className="platform-card-icon-img" />
                   <span className="platform-card-name">{p.name}</span>
                 </div>
               ))}
             </div>
-
             {selectedPlatform && (
               <div className="services-section">
                 <h3>Услуги {PLATFORMS.find(p => p.id === selectedPlatform)?.name}</h3>
                 <div className="services-scroll">
                   {filteredServices.slice(0, 20).map((s, i) => (
-                    <div 
-                      key={i}
-                      className={`service-mini-card ${selectedService?.service === s.service ? 'selected' : ''}`}
-                      onClick={() => setSelectedService(s)}
-                    >
+                    <div key={i} className={`service-mini-card ${selectedService?.service === s.service ? 'selected' : ''}`}
+                      onClick={() => setSelectedService(s)}>
                       <div className="service-mini-name">{s.name.slice(0, 70)}</div>
                       <div className="service-mini-price">{s.rate} ₽</div>
                     </div>
                   ))}
                 </div>
-
                 {selectedService && (
                   <>
                     <label>Ссылка</label>
@@ -129,7 +181,6 @@ function App() {
                     <button className="btn-primary" onClick={createOrder}>🚀 Оформить заказ</button>
                   </>
                 )}
-
                 {orderStatus && <div className="order-status">{orderStatus}</div>}
               </div>
             )}
