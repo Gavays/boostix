@@ -98,6 +98,26 @@ body {
 }
 
 /* Smart tab */
+.smart-tab {
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #7c3aed transparent;
+}
+
+.smart-tab::-webkit-scrollbar {
+  width: 4px;
+}
+
+.smart-tab::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.smart-tab::-webkit-scrollbar-thumb {
+  background: #7c3aed;
+  border-radius: 2px;
+}
+
 .smart-hero {
   text-align: center;
   margin-bottom: 24px;
@@ -729,6 +749,26 @@ input::placeholder {
 }
 
 /* Profile */
+.profile {
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #7c3aed transparent;
+}
+
+.profile::-webkit-scrollbar {
+  width: 4px;
+}
+
+.profile::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.profile::-webkit-scrollbar-thumb {
+  background: #7c3aed;
+  border-radius: 2px;
+}
+
 .profile p {
   padding: 14px;
   background: #1a1a1a;
