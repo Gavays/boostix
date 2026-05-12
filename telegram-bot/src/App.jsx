@@ -4,12 +4,19 @@ import './index.css'
 const tg = typeof window !== 'undefined' && window.Telegram?.WebApp ? window.Telegram.WebApp : null
 const initUser = tg?.initDataUnsafe?.user
 
+const PLATFORMS = [
+  { id: 'telegram', name: 'Telegram', icon: '/icons/boostix-telegram.png' },
+  { id: 'youtube', name: 'YouTube', icon: '/icons/boostix-youtube.png' },
+  { id: 'instagram', name: 'Instagram', icon: '/icons/boostix-instagram.png' },
+  { id: 'tiktok', name: 'TikTok', icon: '/icons/boostix-tiktok.png' },
+  { id: 'vkontakte', name: 'ВКонтакте', icon: '/icons/boostix-vk.png' },
+  { id: 'likee', name: 'Likee', icon: '/icons/boostix-likee.png' },
+]
+
 function App() {
-  const [activeTab, setActiveTab] = useState('smart')
-  const [smartLink, setSmartLink] = useState('')
-  const [detectedPlatform, setDetectedPlatform] = useState(null)
-  const [suggestions, setSuggestions] = useState([])
+  const [activeTab, setActiveTab] = useState('order')
   const [services, setServices] = useState([])
+  const [selectedPlatform, setSelectedPlatform] = useState(null)
   const [selectedService, setSelectedService] = useState(null)
   const [link, setLink] = useState('')
   const [quantity, setQuantity] = useState(100)
@@ -17,8 +24,6 @@ function App() {
   const [autoBudget, setAutoBudget] = useState('')
   const [autoGoal, setAutoGoal] = useState('')
   const [autoPlan, setAutoPlan] = useState(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showDropdown, setShowDropdown] = useState(false)
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
   const userId = initUser?.id || 'Гость'
@@ -32,49 +37,16 @@ function App() {
     fetch(`${API_URL}/services`)
       .then(res => res.json())
       .then(data => {
-        if (data.success && Array.isArray(data.data)) {
-          setServices(data.data)
-        }
+        if (data.success && Array.isArray(data.data)) setServices(data.data)
       })
       .catch(() => {})
   }, [])
 
-  const filteredServices = searchQuery
-    ? services.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredServices = selectedPlatform
+    ? services.filter(s => s.name.toLowerCase().includes(selectedPlatform.toLowerCase()))
     : []
 
-  const showAlert = (msg) => {
-    tg ? tg.showAlert(msg) : alert(msg)
-  }
-
-  const analyzeLink = () => {
-    if (!smartLink.trim()) { showAlert('Вставьте ссылку'); return }
-    
-    if (smartLink.includes('t.me') || smartLink.includes('telegram')) {
-      setDetectedPlatform('Telegram')
-    } else if (smartLink.includes('youtube.com') || smartLink.includes('youtu.be')) {
-      setDetectedPlatform('YouTube')
-    } else if (smartLink.includes('instagram.com')) {
-      setDetectedPlatform('Instagram')
-    } else if (smartLink.includes('tiktok.com')) {
-      setDetectedPlatform('TikTok')
-    } else if (smartLink.includes('vk.com')) {
-      setDetectedPlatform('ВКонтакте')
-    } else {
-      showAlert('Не удалось определить платформу')
-      return
-    }
-
-    const filtered = services.filter(s => 
-      s.name.toLowerCase().includes(detectedPlatform.toLowerCase())
-    ).slice(0, 5)
-    
-    setSuggestions(filtered.length > 0 ? filtered : [
-      { name: '👥 Подписчики', rate: '390.00', service: '118' },
-      { name: '👀 Просмотры', rate: '190.00', service: '118' },
-      { name: '❤️ Реакции', rate: '150.00', service: '391' },
-    ])
-  }
+  const showAlert = (msg) => tg ? tg.showAlert(msg) : alert(msg)
 
   const createOrder = async () => {
     if (!selectedService || !link || !quantity) { showAlert('Заполните все поля'); return }
@@ -92,13 +64,12 @@ function App() {
 
   const createAutoPlan = () => {
     if (!autoBudget || !autoGoal) { showAlert('Укажите бюджет и цель'); return }
-    const days = Math.ceil(parseInt(autoGoal) / (parseInt(autoBudget) / 200))
     setAutoPlan({
       goal: parseInt(autoGoal),
       dailyBudget: parseInt(autoBudget),
-      estimatedDays: days,
+      estimatedDays: Math.ceil(parseInt(autoGoal) / (parseInt(autoBudget) / 200)),
     })
-    showAlert(`План создан! Прогноз: ${days} дней`)
+    showAlert('План создан!')
   }
 
   return (
@@ -109,102 +80,59 @@ function App() {
       </div>
 
       <div className="tabs">
-        <button className={activeTab === 'smart' ? 'active' : ''} onClick={() => setActiveTab('smart')}>🎯 Умный</button>
         <button className={activeTab === 'order' ? 'active' : ''} onClick={() => setActiveTab('order')}>⚡ Заказ</button>
         <button className={activeTab === 'auto' ? 'active' : ''} onClick={() => setActiveTab('auto')}>🤖 Авто</button>
         <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => setActiveTab('profile')}>👤 Профиль</button>
       </div>
 
       <div className="tab-content">
-        {activeTab === 'smart' && (
-          <div className="smart-tab">
-            <div className="smart-hero">
-              <span className="smart-icon">🎯</span>
-              <h2>Умный подбор</h2>
-              <p>Вставьте ссылку — Boostix определит платформу и подберёт услуги</p>
-            </div>
-
-            <div className="smart-input-group">
-              <span className="smart-input-icon">🔗</span>
-              <input type="text" placeholder="Вставьте ссылку..." value={smartLink} onChange={(e) => setSmartLink(e.target.value)} />
-            </div>
-            <button className="btn-primary" onClick={analyzeLink}>🔍 Анализировать</button>
-
-            {detectedPlatform && (
-              <div className="smart-result">
-                <div className="smart-result-header">
-                  <span className="smart-result-icon">✅</span>
-                  <div>
-                    <div className="smart-result-label">Платформа</div>
-                    <div className="smart-result-platform">{detectedPlatform}</div>
-                  </div>
-                </div>
-                <div className="suggestions-list">
-                  {suggestions.map((s, i) => (
-                    <div key={i} className={`suggestion-card ${i === 0 ? 'suggestion-best' : ''}`}
-                      onClick={() => { setSelectedService(s); setActiveTab('order'); setLink(smartLink) }}>
-                      <div className="suggestion-left">
-                        <span className="suggestion-icon">{s.name?.split(' ')[0] || '📦'}</span>
-                        <div>
-                          <div className="suggestion-name">{s.name || s.type}</div>
-                          <div className="suggestion-badge">{i === 0 ? '🔥 Лучший выбор' : '⚡ Старт'}</div>
-                        </div>
-                      </div>
-                      <div className="suggestion-right">
-                        <span className="suggestion-price">от {s.rate || '?'} ₽</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {activeTab === 'order' && (
           <div className="order-form">
-            <h2>⚡ Быстрый заказ</h2>
+            <h2>Выберите платформу</h2>
+            <p className="order-subtitle">Нажмите на иконку соцсети, чтобы увидеть доступные услуги</p>
 
-            <label>Поиск услуги</label>
-            <div className="search-wrapper">
-              <input 
-                type="text" 
-                placeholder="Введите название услуги..." 
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true) }}
-                onFocus={() => setShowDropdown(true)}
-              />
-              {showDropdown && searchQuery && (
-                <div className="services-dropdown">
-                  {filteredServices.slice(0, 15).map((s, i) => (
+            <div className="platforms-grid">
+              {PLATFORMS.map(p => (
+                <div 
+                  key={p.id}
+                  className={`platform-card ${selectedPlatform === p.id ? 'active' : ''}`}
+                  onClick={() => { setSelectedPlatform(p.id); setSelectedService(null) }}
+                >
+                  <img src={p.icon} alt={p.name} className="platform-card-icon-img" />
+                  <span className="platform-card-name">{p.name}</span>
+                </div>
+              ))}
+            </div>
+
+            {selectedPlatform && (
+              <div className="services-section">
+                <h3>Услуги {PLATFORMS.find(p => p.id === selectedPlatform)?.name}</h3>
+                <div className="services-scroll">
+                  {filteredServices.slice(0, 20).map((s, i) => (
                     <div 
-                      key={i} 
-                      className={`service-option ${selectedService?.service === s.service ? 'selected' : ''}`}
-                      onClick={() => { setSelectedService(s); setSearchQuery(s.name.slice(0, 50)); setShowDropdown(false) }}
+                      key={i}
+                      className={`service-mini-card ${selectedService?.service === s.service ? 'selected' : ''}`}
+                      onClick={() => setSelectedService(s)}
                     >
-                      <span className="service-option-name">{s.name.slice(0, 60)}</span>
-                      <span className="service-option-price">от {s.rate} ₽</span>
+                      <div className="service-mini-name">{s.name.slice(0, 70)}</div>
+                      <div className="service-mini-price">{s.rate} ₽</div>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
 
-            <label>Ссылка на профиль или пост</label>
-            <input type="text" placeholder="https://t.me/username" value={link} onChange={(e) => setLink(e.target.value)} />
-            
-            <label>Количество</label>
-            <input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min={10} />
-            
-            {selectedService && (
-              <div className="order-summary">
-                <span>{selectedService.name.slice(0, 50)}</span>
-                <span className="highlight">{selectedService.rate} ₽ / 1000 шт</span>
+                {selectedService && (
+                  <>
+                    <label>Ссылка</label>
+                    <input type="text" placeholder="https://t.me/username" value={link} onChange={(e) => setLink(e.target.value)} />
+                    <label>Количество</label>
+                    <input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min={10} />
+                    <button className="btn-primary" onClick={createOrder}>🚀 Оформить заказ</button>
+                  </>
+                )}
+
+                {orderStatus && <div className="order-status">{orderStatus}</div>}
               </div>
             )}
-
-            <button className="btn-primary" onClick={createOrder}>🚀 Оформить заказ</button>
-            {orderStatus && <div className="order-status">{orderStatus}</div>}
           </div>
         )}
 
@@ -219,11 +147,9 @@ function App() {
             <button className="btn-primary" onClick={createAutoPlan}>🤖 Запустить автопилот</button>
             {autoPlan && (
               <div className="auto-plan">
-                <div className="plan-row"><span>Цель</span><span>+{autoPlan.goal} подписчиков</span></div>
+                <div className="plan-row"><span>Цель</span><span>+{autoPlan.goal}</span></div>
                 <div className="plan-row"><span>Бюджет/день</span><span>до {autoPlan.dailyBudget} ₽</span></div>
                 <div className="plan-row"><span>Прогноз</span><span className="highlight">{autoPlan.estimatedDays} дней</span></div>
-                <div className="progress-bar"><div className="progress-fill"></div></div>
-                <div className="plan-status">🟢 Активно</div>
               </div>
             )}
           </div>
