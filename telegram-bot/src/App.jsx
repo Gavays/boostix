@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import './index.css'
 
-// Получаем данные из URL если есть
 const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
 const urlTgId = urlParams.get('tg_id')
 const urlTgName = urlParams.get('tg_name')
@@ -77,12 +76,15 @@ function App() {
     return 10
   }
 
-  const loadOrders = () => {
-    if (userId !== 'Гость') {
-      fetch(`${API_URL}/orders/user/orders/${userId}`)
-        .then(res => res.json())
-        .then(data => { if (data.success) setOrders(data.orders) })
-        .catch(() => {})
+  const loadOrders = async () => {
+    if (userId === 'Гость') return
+    try {
+      await fetch(`${API_URL}/orders/refresh/${userId}`, { method: 'POST' }).catch(() => {})
+      const res = await fetch(`${API_URL}/orders/user/orders/${userId}`)
+      const data = await res.json()
+      if (data.success) setOrders(data.orders)
+    } catch {
+      // ignore
     }
   }
 
@@ -157,7 +159,7 @@ function App() {
       const res = await fetch(`${API_URL}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serviceId: selectedService.service, link, quantity, userId: userId !== 'Гость' ? parseInt(userId) : null })
+        body: JSON.stringify({ serviceId: selectedService.service, link, quantity, userId: userId !== 'Гость' ? userId : null })
       })
       const data = await res.json()
       if (data.success) {
@@ -339,20 +341,22 @@ function App() {
                 <h3>📋 История заказов</h3>
                 <button className="btn-refresh" onClick={loadOrders}>🔄</button>
               </div>
-              {orders.length === 0 && <p className="orders-empty">Нет заказов</p>}
+              {orders.length === 0 && <p className="orders-empty">У вас пока нет заказов</p>}
               {orders.map((o, i) => (
                 <div key={i} className="order-card">
                   <div className="order-card-header">
-                    <span className="order-id">#{o.provider_order_id}</span>
+                    <span className="order-id">Заказ #{o.provider_order_id?.slice(0, 8)}</span>
                     <span className={`order-status-badge ${o.status}`}>
-                      {o.status === 'pending' && '⏳ В обработке'}
+                      {o.status === 'pending' && '⏳ Ожидает'}
+                      {o.status === 'in_progress' && '🔄 Выполняется'}
                       {o.status === 'completed' && '✅ Выполнен'}
+                      {o.status === 'cancelled' && '🚫 Отменён'}
                       {o.status === 'failed' && '❌ Ошибка'}
-                      {!['pending','completed','failed'].includes(o.status) && '🔄 ' + o.status}
+                      {!['pending','in_progress','completed','cancelled','failed'].includes(o.status) && '🔄 ' + o.status}
                     </span>
                   </div>
                   <div className="order-card-body">
-                    <div className="order-link">{o.link?.slice(0, 50)}</div>
+                    <div className="order-link" title={o.link}>{o.link?.slice(0, 45)}{o.link?.length > 45 ? '...' : ''}</div>
                     <div className="order-quantity">{o.quantity} шт</div>
                   </div>
                   <div className="order-card-date">{new Date(o.created_at).toLocaleString('ru-RU')}</div>

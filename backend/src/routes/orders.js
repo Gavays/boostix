@@ -17,7 +17,6 @@ router.post('/', async (req, res) => {
   try {
     const result = await providerClient.createOrder(serviceId, link, quantity);
     
-    // Сохраняем заказ в БД, если userId передан и не Гость
     if (userId && userId !== 'Гость') {
       await pool.query(
         'INSERT INTO orders (user_id, provider_order_id, link, quantity, status) VALUES ($1, $2, $3, $4, $5)',
@@ -40,6 +39,40 @@ router.get('/:id', async (req, res) => {
   try {
     const status = await providerClient.getOrderStatus(req.params.id);
     res.json({ success: true, data: status });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/orders/refresh/:userId — принудительное обновление статусов
+router.post('/refresh/:userId', async (req, res) => {
+  try {
+    const { rows: orders } = await pool.query(
+      "SELECT * FROM orders WHERE user_id = $1 AND (status = 'pending' OR status = 'in_progress')",
+      [req.params.userId]
+    );
+
+    for (const order of orders) {
+      try {
+        const status = await providerClient.getOrderStatus(order.provider_order_id);
+        
+        let newStatus = order.status;
+        if (status.status === 'Completed' || status.status === 'Complete') newStatus = 'completed';
+        else if (status.status === 'Canceled' || status.status === 'Cancelled') newStatus = 'cancelled';
+        else if (status.status === 'In progress') newStatus = 'in_progress';
+        else if (status.status === 'Pending') newStatus = 'pending';
+        else if (status.status === 'Partial') newStatus = 'completed';
+        
+        if (newStatus !== order.status) {
+          await pool.query(
+            'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2',
+            [newStatus, order.id]
+          );
+        }
+      } catch (err) {}
+    }
+
+    res.json({ success: true, message: 'Статусы обновлены' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
