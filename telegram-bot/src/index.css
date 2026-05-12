@@ -209,6 +209,23 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #7c3aed transparent;
+}
+
+.suggestions-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.suggestions-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.suggestions-list::-webkit-scrollbar-thumb {
+  background: #7c3aed;
+  border-radius: 2px;
 }
 
 .suggestion-card {
@@ -734,6 +751,23 @@ input::placeholder {
 /* Orders History */
 .orders-history {
   margin-top: 24px;
+  max-height: 350px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #7c3aed transparent;
+}
+
+.orders-history::-webkit-scrollbar {
+  width: 4px;
+}
+
+.orders-history::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.orders-history::-webkit-scrollbar-thumb {
+  background: #7c3aed;
+  border-radius: 2px;
 }
 
 .orders-history-header {
