@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
     if (userId && userId !== 'Гость') {
       await pool.query(
         'INSERT INTO orders (user_id, provider_order_id, link, quantity, status) VALUES ($1, $2, $3, $4, $5)',
-        [userId, result.orderId, link, quantity, 'pending']
+        [userId, String(result.orderId), link, quantity, 'pending']
       );
     }
 
@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
 // GET /api/orders/:id — статус заказа
 router.get('/:id', async (req, res) => {
   try {
-    const status = await providerClient.getOrderStatus(req.params.id);
+    const status = await providerClient.getOrderStatus(parseInt(req.params.id));
     res.json({ success: true, data: status });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -54,15 +54,19 @@ router.post('/refresh/:userId', async (req, res) => {
 
     for (const order of orders) {
       try {
-        const status = await providerClient.getOrderStatus(order.provider_order_id);
+        const status = await providerClient.getOrderStatus(parseInt(order.provider_order_id));
         console.log('Статус от TmSMM:', JSON.stringify(status))
         
         let newStatus = order.status;
-        if (status.status === 'Completed' || status.status === 'Complete') newStatus = 'completed';
-        else if (status.status === 'Canceled' || status.status === 'Cancelled') newStatus = 'cancelled';
-        else if (status.status === 'In progress') newStatus = 'in_progress';
-        else if (status.status === 'Pending') newStatus = 'pending';
-        else if (status.status === 'Partial') newStatus = 'completed';
+        const s = status.status || status;
+        if (typeof s === 'string') {
+          const sl = s.toLowerCase();
+          if (sl.includes('complete')) newStatus = 'completed';
+          else if (sl.includes('cancel')) newStatus = 'cancelled';
+          else if (sl.includes('progress')) newStatus = 'in_progress';
+          else if (sl.includes('pending')) newStatus = 'pending';
+          else if (sl.includes('partial')) newStatus = 'completed';
+        }
         
         if (newStatus !== order.status) {
           await pool.query(
