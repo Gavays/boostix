@@ -74,35 +74,15 @@ body {
 
 .tab-content {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: hidden;
   min-height: 0;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: #333 transparent;
-}
-
-.tab-content::-webkit-scrollbar {
-  width: 4px;
-}
-
-.tab-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.tab-content::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 2px;
-}
-
-.tab-content::-webkit-scrollbar-thumb:hover {
-  background: #555;
 }
 
 /* Smart tab */
 .smart-tab {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .smart-hero {
@@ -174,7 +154,7 @@ body {
   display: flex;
   flex-direction: column;
   flex: 1;
-  max-height: calc(100vh - 280px);
+  min-height: 0;
 }
 
 @keyframes fadeIn {
@@ -189,6 +169,7 @@ body {
   margin-bottom: 16px;
   padding-bottom: 14px;
   border-bottom: 1px solid #222;
+  flex-shrink: 0;
 }
 
 .smart-result-icon {
@@ -214,15 +195,16 @@ body {
   font-weight: 600;
   margin-bottom: 14px;
   color: #ccc;
+  flex-shrink: 0;
 }
 
 .suggestions-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: none;
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: #7c3aed transparent;
 }
