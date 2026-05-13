@@ -31,8 +31,7 @@ const LINK_RULES = {
 function App() {
   const [activeTab, setActiveTab] = useState('smart')
   const [smartLink, setSmartLink] = useState('')
-  const [detectedPlatform, setDetectedPlatform] = useState(null)
-  const [suggestions, setSuggestions] = useState([])
+  const [smartResults, setSmartResults] = useState(null)
   const [services, setServices] = useState([])
   const [selectedPlatform, setSelectedPlatform] = useState(null)
   const [selectedService, setSelectedService] = useState(null)
@@ -46,8 +45,6 @@ function App() {
 
   useEffect(() => {
     if (tg) { tg.ready(); tg.expand() }
-    document.body.style.height = window.innerHeight + 'px'
-    document.body.style.overflow = 'hidden'
     if (user?.id) {
       fetch(`${API_URL}/orders/user/register`, {
         method: 'POST',
@@ -101,18 +98,19 @@ function App() {
     else if (smartLink.includes('likee.com')) platform = 'likee'
     else { showModal('error', 'Ошибка', 'Не удалось определить платформу'); return }
 
-    setDetectedPlatform(platform)
-    setSmartLink('')
-    const filtered = services.filter(s => s.name.toLowerCase().includes(PLATFORMS.find(p => p.id === platform)?.name.toLowerCase())).slice(0, 5)
-    setSuggestions(filtered.length > 0 ? filtered : [
+    const filtered = services.filter(s => s.name.toLowerCase().includes(PLATFORMS.find(p => p.id === platform)?.name.toLowerCase())).slice(0, 10)
+    const sugs = filtered.length > 0 ? filtered : [
       { name: '👥 Подписчики', rate: '390.00', service: '118' },
       { name: '👀 Просмотры', rate: '190.00', service: '118' },
       { name: '❤️ Реакции', rate: '150.00', service: '391' },
-    ])
+    ]
+    setSmartResults({ platform, suggestions: sugs })
+    setSmartLink('')
   }
 
   const selectSuggestion = (s) => {
     setSelectedService(s)
+    setSmartResults(null)
     setStep('order')
     setActiveTab('order')
   }
@@ -193,13 +191,13 @@ function App() {
       </div>
 
       <div className="tabs">
-        <button className={activeTab === 'smart' ? 'active' : ''} onClick={() => setActiveTab('smart')}>🎯 Умный</button>
+        <button className={activeTab === 'smart' ? 'active' : ''} onClick={() => { setActiveTab('smart'); setSmartResults(null) }}>🎯 Умный</button>
         <button className={activeTab === 'order' ? 'active' : ''} onClick={() => { setActiveTab('order'); setStep('platforms'); setSelectedPlatform(null); setSelectedService(null) }}>⚡ Заказ</button>
         <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => { setActiveTab('profile'); loadOrders() }}>👤 Профиль</button>
       </div>
 
       <div className="tab-content">
-        {activeTab === 'smart' && (
+        {activeTab === 'smart' && !smartResults && (
           <div className="smart-tab">
             <div className="smart-hero">
               <span className="smart-icon">🎯</span>
@@ -211,34 +209,26 @@ function App() {
               <input type="text" placeholder="Вставьте ссылку..." value={smartLink} onChange={(e) => setSmartLink(e.target.value)} />
             </div>
             <button className="btn-primary" onClick={analyzeLink}>🔍 Анализировать</button>
-            {detectedPlatform && (
-              <div className="smart-result">
-                <div className="smart-result-header">
-                  <span className="smart-result-icon">✅</span>
-                  <div>
-                    <div className="smart-result-label">Платформа</div>
-                    <div className="smart-result-platform">{PLATFORMS.find(p => p.id === detectedPlatform)?.name}</div>
+          </div>
+        )}
+
+        {smartResults && (
+          <div className="order-form">
+            <div className="step-header">
+              <button className="back-btn" onClick={() => setSmartResults(null)}>← Назад</button>
+              <h2>{PLATFORMS.find(p => p.id === smartResults.platform)?.name}</h2>
+            </div>
+            <div className="services-scroll">
+              {smartResults.suggestions.map((s, i) => (
+                <div key={i} className="service-detail-card" onClick={() => selectSuggestion(s)}>
+                  <div className="service-detail-name">{s.name}</div>
+                  <div className="service-detail-info">
+                    <span className="service-detail-price">{s.rate} ₽</span>
+                    <span className="service-detail-unit">/ 1000 шт</span>
                   </div>
                 </div>
-                <div className="suggestions-list">
-                  {suggestions.map((s, i) => (
-                    <div key={i} className={`suggestion-card ${i === 0 ? 'suggestion-best' : ''}`}
-                      onClick={() => selectSuggestion(s)}>
-                      <div className="suggestion-left">
-                        <span className="suggestion-icon">{s.name?.split(' ')[0] || '📦'}</span>
-                        <div>
-                          <div className="suggestion-name">{s.name || s.type}</div>
-                          <div className="suggestion-badge">{i === 0 ? '🔥 Лучший выбор' : '⚡ Старт'}</div>
-                        </div>
-                      </div>
-                      <div className="suggestion-right">
-                        <span className="suggestion-price">от {s.rate || '?'} ₽</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         )}
 
