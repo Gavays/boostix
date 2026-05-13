@@ -45,7 +45,7 @@ function App() {
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
   useEffect(() => {
-    if (tg) { tg.ready(); tg.expand() }
+    if (tg) { tg.ready(); tg.expand(); tg.disableVerticalSwipes() }
     if (user?.id) {
       fetch(`${API_URL}/orders/user/register`, {
         method: 'POST',

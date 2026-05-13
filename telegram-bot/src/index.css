@@ -82,6 +82,8 @@ body {
 .smart-tab {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .smart-hero {
@@ -149,6 +151,10 @@ body {
   padding: 20px;
   margin-top: 20px;
   animation: fadeIn 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 @keyframes fadeIn {
@@ -163,6 +169,7 @@ body {
   margin-bottom: 16px;
   padding-bottom: 14px;
   border-bottom: 1px solid #222;
+  flex-shrink: 0;
 }
 
 .smart-result-icon {
@@ -188,14 +195,16 @@ body {
   font-weight: 600;
   margin-bottom: 14px;
   color: #ccc;
+  flex-shrink: 0;
 }
 
 .suggestions-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 400px;
+  flex: 1;
   overflow-y: auto;
+  min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: #7c3aed transparent;
 }
