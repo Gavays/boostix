@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
         const refUser = await pool.query('SELECT referred_by FROM users WHERE telegram_id = $1', [userId]);
         if (refUser.rows[0]?.referred_by) {
           let refId = refUser.rows[0].referred_by;
-          const levels = [0.10, 0.03, 0.02]; // 10%, 3%, 2%
+          const levels = [0.10, 0.03, 0.02];
           
           for (let i = 0; i < levels.length; i++) {
             if (!refId) break;
@@ -149,8 +149,6 @@ router.get('/user/balance/:userId', async (req, res) => {
 router.post('/user/register', async (req, res) => {
   const { telegram_id, first_name, username, ref } = req.body;
 
-  console.log('Получена регистрация:', { telegram_id, ref });
-
   if (!telegram_id) {
     return res.status(400).json({ success: false, error: 'telegram_id обязателен' });
   }
@@ -159,16 +157,17 @@ router.post('/user/register', async (req, res) => {
     const existing = await pool.query('SELECT * FROM users WHERE telegram_id = $1', [telegram_id]);
 
     if (existing.rows.length > 0) {
-      // Обновляем реферала если пользователь уже есть, но пришёл с ref
-      if (ref && !existing.rows[0].referred_by) {
+      if (ref && !existing.rows[0].referred_by && ref !== telegram_id) {
         await pool.query('UPDATE users SET referred_by = $1 WHERE telegram_id = $2', [ref, telegram_id]);
       }
       return res.json({ success: true, user: existing.rows[0] });
     }
 
+    const finalRef = (ref && ref !== telegram_id) ? ref : null;
+
     const result = await pool.query(
       'INSERT INTO users (telegram_id, first_name, username, balance, referred_by) VALUES ($1, $2, $3, 0, $4) RETURNING *',
-      [telegram_id, first_name || 'Пользователь', username || '', ref || null]
+      [telegram_id, first_name || 'Пользователь', username || '', finalRef]
     );
 
     res.json({ success: true, user: result.rows[0] });
