@@ -76,6 +76,8 @@ body {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: #333 transparent;
 }
@@ -99,8 +101,11 @@ body {
 
 /* Smart tab */
 .smart-tab {
+  display: flex;
+  flex-direction: column;
   max-height: 100%;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #7c3aed transparent;
 }
@@ -752,6 +757,7 @@ input::placeholder {
 .profile {
   max-height: 100%;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #7c3aed transparent;
 }
