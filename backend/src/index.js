@@ -30,15 +30,6 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.get('/api/fix-self-ref', async (req, res) => {
-  try {
-    await pool.query("UPDATE users SET referred_by = NULL WHERE telegram_id = referred_by");
-    res.json({ success: true, message: 'Саморефералы исправлены' });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
-});
-
 async function start() {
   try {
     await initDatabase();
