@@ -4,6 +4,7 @@ import './index.css'
 const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
 const urlTgId = urlParams.get('tg_id')
 const urlTgName = urlParams.get('tg_name')
+const urlRef = urlParams.get('ref')
 
 const tg = typeof window !== 'undefined' && window.Telegram?.WebApp ? window.Telegram.WebApp : null
 const user = tg?.initDataUnsafe?.user
@@ -40,6 +41,9 @@ function App() {
   const [step, setStep] = useState('platforms')
   const [modal, setModal] = useState(null)
   const [orders, setOrders] = useState([])
+  const [refStats, setRefStats] = useState(null)
+  const [refLink, setRefLink] = useState('')
+  const [refHistory, setRefHistory] = useState([])
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
@@ -49,7 +53,7 @@ function App() {
       fetch(`${API_URL}/orders/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username })
+        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username, ref: urlRef || null })
       }).catch(() => {})
     }
     fetch(`${API_URL}/services`)
@@ -116,6 +120,36 @@ function App() {
       if (data.success) setOrders(data.orders)
     } catch {
       // ignore
+    }
+  }
+
+  const loadRefData = async () => {
+    if (userId === 'Гость') return
+    try {
+      const [statsRes, linkRes, historyRes] = await Promise.all([
+        fetch(`${API_URL}/orders/referral/stats/${userId}`),
+        fetch(`${API_URL}/orders/referral/link/${userId}`),
+        fetch(`${API_URL}/orders/referral/history/${userId}`)
+      ])
+      const stats = await statsRes.json()
+      const link = await linkRes.json()
+      const history = await historyRes.json()
+      
+      if (stats.success) setRefStats(stats)
+      if (link.success) setRefLink(link.link)
+      if (history.success) setRefHistory(history.history)
+    } catch {
+      // ignore
+    }
+  }
+
+  const copyRefLink = () => {
+    if (refLink) {
+      navigator.clipboard.writeText(refLink).then(() => {
+        showModal('success', '✅ Скопировано', 'Реферальная ссылка скопирована в буфер обмена')
+      }).catch(() => {
+        showModal('error', 'Ошибка', 'Не удалось скопировать ссылку')
+      })
     }
   }
 
@@ -231,6 +265,7 @@ function App() {
       <div className="tabs">
         <button className={activeTab === 'smart' ? 'active' : ''} onClick={() => { setActiveTab('smart'); setSmartResults(null) }}>🎯 Умный</button>
         <button className={activeTab === 'order' ? 'active' : ''} onClick={() => { setActiveTab('order'); setStep('platforms'); setSelectedPlatform(null); setSelectedService(null) }}>⚡ Заказ</button>
+        <button className={activeTab === 'ref' ? 'active' : ''} onClick={() => { setActiveTab('ref'); loadRefData() }}>👥 Рефералы</button>
         <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => { setActiveTab('profile'); loadOrders() }}>👤 Профиль</button>
       </div>
 
@@ -359,6 +394,61 @@ function App() {
                 <button className="btn-primary" onClick={createOrder}>🚀 Оформить заказ</button>
               </>
             )}
+          </div>
+        )}
+
+        {activeTab === 'ref' && (
+          <div className="profile">
+            <h2>👥 Реферальная система</h2>
+            <p>Приглашайте друзей и зарабатывайте!</p>
+            
+            <div className="profile-balance" style={{ marginBottom: 12 }}>
+              💰 Заработано: {refStats?.totalEarned || '0'} ₽
+            </div>
+
+            {refLink && (
+              <>
+                <label>Ваша реферальная ссылка</label>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <input type="text" value={refLink} readOnly style={{ flex: 1, fontSize: 12 }} />
+                  <button className="btn-primary" onClick={copyRefLink} style={{ width: 'auto', marginTop: 0, padding: '12px 16px', fontSize: 13 }}>📋</button>
+                </div>
+              </>
+            )}
+
+            <div className="referral-levels" style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 16, marginBottom: 16 }}>
+              <div className="ref-level-card">
+                <div className="ref-level-num">1 уровень</div>
+                <div className="ref-level-percent">10%</div>
+                <div className="ref-level-count">{refStats?.level1 || 0} чел.</div>
+              </div>
+              <div className="ref-level-card">
+                <div className="ref-level-num">2 уровень</div>
+                <div className="ref-level-percent">3%</div>
+                <div className="ref-level-count">{refStats?.level2 || 0} чел.</div>
+              </div>
+              <div className="ref-level-card">
+                <div className="ref-level-num">3 уровень</div>
+                <div className="ref-level-percent">2%</div>
+                <div className="ref-level-count">{refStats?.level3 || 0} чел.</div>
+              </div>
+            </div>
+
+            <div className="orders-history">
+              <h3>📋 История начислений</h3>
+              {refHistory.length === 0 && <p className="orders-empty">Нет начислений</p>}
+              {refHistory.map((h, i) => (
+                <div key={i} className="order-card">
+                  <div className="order-card-header">
+                    <span className="order-id" style={{ color: '#4ade80' }}>+{h.amount} ₽</span>
+                  </div>
+                  <div className="order-card-body">
+                    <div className="order-link">{h.description}</div>
+                  </div>
+                  <div className="order-card-date">{new Date(h.created_at).toLocaleString('ru-RU')}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

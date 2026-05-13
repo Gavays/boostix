@@ -10,6 +10,7 @@ CREATE TABLE users (
     total_spent DECIMAL(10, 2) DEFAULT 0.00,
     role VARCHAR(20) DEFAULT 'user',
     is_blocked BOOLEAN DEFAULT FALSE,
+    referred_by BIGINT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -70,7 +71,7 @@ CREATE TABLE orders (
 -- Таблица транзакций
 CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+    user_id BIGINT NOT NULL,
     order_id INT REFERENCES orders(id) ON DELETE SET NULL,
     type VARCHAR(20) NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
@@ -166,6 +167,7 @@ CREATE INDEX idx_api_logs_action ON api_logs(action);
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX idx_auto_plans_user_id ON auto_plans(user_id);
 CREATE INDEX idx_auto_plans_status ON auto_plans(status);
+CREATE INDEX idx_users_referred_by ON users(referred_by);
 
 -- Триггер для автообновления updated_at
 CREATE OR REPLACE FUNCTION update_timestamp()

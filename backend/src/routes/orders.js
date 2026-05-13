@@ -22,6 +22,31 @@ router.post('/', async (req, res) => {
         'INSERT INTO orders (user_id, provider_order_id, link, quantity, status) VALUES ($1, $2, $3, $4, $5)',
         [userId, String(result.orderId), link, quantity, 'pending']
       );
+      
+      // Начисляем реферальные проценты
+      try {
+        const refUser = await pool.query('SELECT referred_by FROM users WHERE telegram_id = $1', [userId]);
+        if (refUser.rows[0]?.referred_by) {
+          let refId = refUser.rows[0].referred_by;
+          const levels = [0.10, 0.03, 0.02]; // 10%, 3%, 2%
+          
+          for (let i = 0; i < levels.length; i++) {
+            if (!refId) break;
+            const amount = parseFloat((quantity * (parseFloat(link) || 1) / 1000 * levels[i]).toFixed(2));
+            if (amount > 0) {
+              await pool.query(
+                "INSERT INTO transactions (user_id, type, amount, description) VALUES ($1, 'referral', $2, $3)",
+                [String(refId), amount, `Реферальный бонус ${i+1} уровня от заказа #${result.orderId}`]
+              );
+              await pool.query('UPDATE users SET balance = balance + $1 WHERE telegram_id = $2', [amount, String(refId)]);
+            }
+            const nextRef = await pool.query('SELECT referred_by FROM users WHERE telegram_id = $1', [String(refId)]);
+            refId = nextRef.rows[0]?.referred_by;
+          }
+        }
+      } catch (err) {
+        // ignore referral errors
+      }
     }
 
     res.json({ 
@@ -120,9 +145,9 @@ router.get('/user/balance/:userId', async (req, res) => {
   }
 });
 
-// POST /api/user/register — регистрация пользователя
+// POST /api/user/register — регистрация пользователя с рефералом
 router.post('/user/register', async (req, res) => {
-  const { telegram_id, first_name, username } = req.body;
+  const { telegram_id, first_name, username, ref } = req.body;
 
   if (!telegram_id) {
     return res.status(400).json({ success: false, error: 'telegram_id обязателен' });
@@ -136,11 +161,64 @@ router.post('/user/register', async (req, res) => {
     }
 
     const result = await pool.query(
-      'INSERT INTO users (telegram_id, first_name, username, balance) VALUES ($1, $2, $3, 0) RETURNING *',
-      [telegram_id, first_name || 'Пользователь', username || '']
+      'INSERT INTO users (telegram_id, first_name, username, balance, referred_by) VALUES ($1, $2, $3, 0, $4) RETURNING *',
+      [telegram_id, first_name || 'Пользователь', username || '', ref || null]
     );
 
     res.json({ success: true, user: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/referral/stats/:userId — статистика рефералов
+router.get('/referral/stats/:userId', async (req, res) => {
+  try {
+    const level1 = await pool.query(
+      'SELECT COUNT(*) FROM users WHERE referred_by = $1',
+      [req.params.userId]
+    );
+    const level2 = await pool.query(
+      'SELECT COUNT(*) FROM users WHERE referred_by IN (SELECT telegram_id FROM users WHERE referred_by = $1)',
+      [req.params.userId]
+    );
+    const level3 = await pool.query(
+      'SELECT COUNT(*) FROM users WHERE referred_by IN (SELECT telegram_id FROM users WHERE referred_by IN (SELECT telegram_id FROM users WHERE referred_by = $1))',
+      [req.params.userId]
+    );
+    
+    const earnings = await pool.query(
+      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'referral'",
+      [req.params.userId]
+    );
+    
+    res.json({
+      success: true,
+      level1: parseInt(level1.rows[0].count),
+      level2: parseInt(level2.rows[0].count),
+      level3: parseInt(level3.rows[0].count),
+      totalEarned: parseFloat(earnings.rows[0].total)
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/referral/link/:userId — получить реферальную ссылку
+router.get('/referral/link/:userId', async (req, res) => {
+  const botUsername = 'boostix_smm_bot';
+  const link = `https://t.me/${botUsername}?start=ref_${req.params.userId}`;
+  res.json({ success: true, link });
+});
+
+// GET /api/referral/history/:userId — история начислений
+router.get('/referral/history/:userId', async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM transactions WHERE user_id = $1 AND type = 'referral' ORDER BY created_at DESC LIMIT 30",
+      [req.params.userId]
+    );
+    res.json({ success: true, history: result.rows });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
