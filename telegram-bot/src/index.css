@@ -76,6 +76,7 @@ body {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .smart-tab {
@@ -148,8 +149,6 @@ body {
   padding: 20px;
   margin-top: 20px;
   animation: fadeIn 0.3s ease;
-  display: flex;
-  flex-direction: column;
 }
 
 @keyframes fadeIn {
@@ -195,7 +194,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 350px;
+  max-height: 400px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #7c3aed transparent;
@@ -722,7 +721,7 @@ input::placeholder {
 
 .orders-history {
   margin-top: 24px;
-  max-height: 350px;
+  max-height: 400px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #7c3aed transparent;
