@@ -76,7 +76,6 @@ body {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  -webkit-overflow-scrolling: touch;
 }
 
 .smart-tab {
@@ -194,7 +193,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #7c3aed transparent;

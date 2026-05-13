@@ -46,6 +46,8 @@ function App() {
 
   useEffect(() => {
     if (tg) { tg.ready(); tg.expand() }
+    document.body.style.height = window.innerHeight + 'px'
+    document.body.style.overflow = 'hidden'
     if (user?.id) {
       fetch(`${API_URL}/orders/user/register`, {
         method: 'POST',
