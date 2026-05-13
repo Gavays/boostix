@@ -4,26 +4,28 @@ require('dotenv').config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const WEB_APP_URL = 'https://boostix-app.onrender.com';
+const WELCOME_IMAGE = 'https://i.ibb.co/ваша-картинка.png'; // Замените на прямую ссылку
 
 bot.start((ctx) => {
   const user = ctx.from;
   const payload = ctx.message?.text?.split(' ')[1] || '';
   
-  // Извлекаем реферальный ID если есть
   let refParam = '';
   if (payload.startsWith('ref_')) {
     refParam = payload.replace('ref_', '');
   }
 
-  ctx.reply(
-    '🤖 *Добро пожаловать в Boostix!*\n\n' +
-    '🎯 Умный подбор услуг\n' +
-    '📊 Детальная аналитика\n' +
-    '🤖 Автопродвижение\n' +
-    '👥 Реферальная система\n' +
-    '🛡 Гарантия от банов\n\n' +
-    'Нажмите кнопку ниже, чтобы начать:',
+  ctx.replyWithPhoto(
+    WELCOME_IMAGE,
     {
+      caption: 
+        '🤖 *Добро пожаловать в Boostix!*\n\n' +
+        '🎯 Умный подбор услуг\n' +
+        '📊 Детальная аналитика\n' +
+        '🤖 Автопродвижение\n' +
+        '👥 Реферальная система\n' +
+        '🛡 Гарантия от банов\n\n' +
+        'Нажмите кнопку ниже, чтобы начать:',
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
