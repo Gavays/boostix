@@ -39,6 +39,16 @@ app.get('/api/debug-orders', async (req, res) => {
   }
 });
 
+app.get('/api/add-ref-column', async (req, res) => {
+  try {
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by BIGINT');
+    await pool.query('ALTER TABLE transactions ALTER COLUMN user_id TYPE BIGINT');
+    res.json({ success: true, message: 'Колонка referred_by добавлена, transactions исправлена' });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
 async function start() {
   try {
     await initDatabase();

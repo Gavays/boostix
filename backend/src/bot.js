@@ -4,7 +4,7 @@ require('dotenv').config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const WEB_APP_URL = 'https://boostix-app.onrender.com';
-const WELCOME_IMAGE = 'https://i.ibb.co/ваша-картинка.png'; // Замените на прямую ссылку
+const WELCOME_IMAGE = 'https://ibb.co/gLdY9MJj'; // Замените на прямую ссылку
 
 bot.start((ctx) => {
   const user = ctx.from;
