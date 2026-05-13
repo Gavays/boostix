@@ -49,12 +49,12 @@ function App() {
 
   useEffect(() => {
     if (tg) { tg.ready(); tg.expand() }
-    if (user?.id) {
-      console.log('Отправляю регистрацию:', { telegram_id: user.id, ref: urlRef })
+    // Регистрируем всегда, если есть ID
+    if (userId !== 'Гость') {
       fetch(`${API_URL}/orders/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username, ref: urlRef || null })
+        body: JSON.stringify({ telegram_id: userId, first_name: userName, username: '', ref: urlRef || null })
       }).catch(() => {})
     }
     fetch(`${API_URL}/services`)
