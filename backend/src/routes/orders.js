@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
           
           for (let i = 0; i < levels.length; i++) {
             if (!refId) break;
-            const amount = parseFloat((quantity * (parseFloat(link) || 1) / 1000 * levels[i]).toFixed(2));
+            const amount = parseFloat((quantity * 1 / 1000 * levels[i]).toFixed(2));
             if (amount > 0) {
               await pool.query(
                 "INSERT INTO transactions (user_id, type, amount, description) VALUES ($1, 'referral', $2, $3)",
@@ -149,6 +149,8 @@ router.get('/user/balance/:userId', async (req, res) => {
 router.post('/user/register', async (req, res) => {
   const { telegram_id, first_name, username, ref } = req.body;
 
+  console.log('Получена регистрация:', { telegram_id, ref });
+
   if (!telegram_id) {
     return res.status(400).json({ success: false, error: 'telegram_id обязателен' });
   }
@@ -157,6 +159,10 @@ router.post('/user/register', async (req, res) => {
     const existing = await pool.query('SELECT * FROM users WHERE telegram_id = $1', [telegram_id]);
 
     if (existing.rows.length > 0) {
+      // Обновляем реферала если пользователь уже есть, но пришёл с ref
+      if (ref && !existing.rows[0].referred_by) {
+        await pool.query('UPDATE users SET referred_by = $1 WHERE telegram_id = $2', [ref, telegram_id]);
+      }
       return res.json({ success: true, user: existing.rows[0] });
     }
 

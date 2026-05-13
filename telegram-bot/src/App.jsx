@@ -50,6 +50,7 @@ function App() {
   useEffect(() => {
     if (tg) { tg.ready(); tg.expand() }
     if (user?.id) {
+      console.log('Отправляю регистрацию:', { telegram_id: user.id, ref: urlRef })
       fetch(`${API_URL}/orders/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
