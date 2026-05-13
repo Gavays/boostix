@@ -68,6 +68,38 @@ function App() {
     return allowed.some(domain => link.toLowerCase().includes(domain))
   }
 
+  const validateServiceLink = (link, serviceName) => {
+    const name = serviceName.toLowerCase()
+    
+    const isFollowers = name.includes('подписчик') || name.includes('subscriber') || name.includes('follow')
+    const isReactions = name.includes('реакци') || name.includes('reaction')
+    const isLikes = name.includes('лайк') || name.includes('like')
+    const isViews = name.includes('просмотр') || name.includes('view')
+    const isComments = name.includes('комментар') || name.includes('comment')
+    const isReposts = name.includes('репост') || name.includes('repost') || name.includes('поделить')
+    
+    if (isFollowers) {
+      const postPatterns = ['/post/', '/video/', '/reel/', '/story/', '/photo/']
+      const hasPostPattern = postPatterns.some(p => link.toLowerCase().includes(p))
+      if (hasPostPattern) {
+        return { valid: false, message: 'Для подписчиков нужна ссылка на профиль или канал, а не на пост/видео.' }
+      }
+    }
+    
+    if (isReactions || isLikes || isViews || isComments || isReposts) {
+      const hasPostIndicators = link.includes('/post/') || 
+                                link.includes('/video/') || 
+                                link.includes('/reel/') ||
+                                link.includes('/story/') ||
+                                (link.match(/\//g) || []).length > 3
+      if (!hasPostIndicators) {
+        return { valid: false, message: 'Для данной услуги нужна ссылка на конкретный пост, видео или публикацию.' }
+      }
+    }
+    
+    return { valid: true }
+  }
+
   const getStep = (q) => {
     if (q >= 10000) return 1000
     if (q >= 1000) return 100
@@ -138,6 +170,12 @@ function App() {
   const createOrder = async () => {
     if (!selectedService || !link || !quantity) {
       showModal('error', 'Ошибка', 'Заполните все поля')
+      return
+    }
+
+    const linkCheck = validateServiceLink(link, selectedService.name)
+    if (!linkCheck.valid) {
+      showModal('error', '❌ Неверная ссылка', linkCheck.message)
       return
     }
 
