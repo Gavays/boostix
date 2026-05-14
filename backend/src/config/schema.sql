@@ -204,4 +204,8 @@ INSERT INTO settings (key, value, description) VALUES
     ('min_deposit', '10', 'Минимальный депозит'),
     ('max_deposit', '50000', 'Максимальный депозит'),
     ('telegram_channel', '', 'Канал для уведомлений'),
-    ('support_link', '', 'Ссылка на поддержку');
+    ('support_link', '', 'Ссылка на поддержку'),
+    ('ref_level1', '10', 'Реферальный процент 1 уровня'),
+    ('ref_level2', '3', 'Реферальный процент 2 уровня'),
+    ('ref_level3', '2', 'Реферальный процент 3 уровня')
+ON CONFLICT (key) DO NOTHING;

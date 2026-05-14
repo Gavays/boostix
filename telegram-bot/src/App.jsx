@@ -52,6 +52,8 @@ function App() {
   const [adminOrderStatus, setAdminOrderStatus] = useState('all')
   const [adminTransactions, setAdminTransactions] = useState([])
   const [adminTransType, setAdminTransType] = useState('all')
+  // 👇 НОВЫЙ state для настроек
+  const [adminSettings, setAdminSettings] = useState({})
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
@@ -188,6 +190,30 @@ function App() {
       if (data.success) setAdminTransactions(data.transactions)
     } catch {
       // ignore
+    }
+  }
+
+  // 👇 НОВЫЕ функции для настроек
+  const loadAdminSettings = async () => {
+    try {
+      const res = await fetch(`${API_URL}/orders/admin/settings`)
+      const data = await res.json()
+      if (data.success) setAdminSettings(data.settings)
+    } catch {
+      // ignore
+    }
+  }
+
+  const saveSettings = async () => {
+    try {
+      await fetch(`${API_URL}/orders/admin/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: adminSettings })
+      })
+      showModal('success', '✅ Сохранено', 'Настройки обновлены')
+    } catch {
+      showModal('error', 'Ошибка', 'Не удалось сохранить настройки')
     }
   }
 
@@ -560,6 +586,8 @@ function App() {
               <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 12, background: adminSection === 'users' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('users'); loadAdminUsers() }}>👥</button>
               <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 12, background: adminSection === 'orders' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('orders'); loadAdminOrders() }}>📦</button>
               <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 12, background: adminSection === 'transactions' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('transactions'); loadAdminTransactions() }}>💰</button>
+              {/* 👇 НОВАЯ кнопка настроек */}
+              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 12, background: adminSection === 'settings' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('settings'); loadAdminSettings() }}>⚙️</button>
             </div>
 
             {adminSection === 'dashboard' && (
@@ -650,6 +678,55 @@ function App() {
                     </div>
                   ))}
                 </div>
+              </>
+            )}
+
+            {/* 👇 НОВАЯ секция настроек */}
+            {adminSection === 'settings' && (
+              <>
+                <label>Наценка (%)</label>
+                <input
+                  type="number"
+                  value={adminSettings.default_markup || '50'}
+                  onChange={(e) => setAdminSettings({...adminSettings, default_markup: e.target.value})}
+                />
+                
+                <label>Мин. депозит (₽)</label>
+                <input
+                  type="number"
+                  value={adminSettings.min_deposit || '10'}
+                  onChange={(e) => setAdminSettings({...adminSettings, min_deposit: e.target.value})}
+                />
+                
+                <label>Макс. депозит (₽)</label>
+                <input
+                  type="number"
+                  value={adminSettings.max_deposit || '50000'}
+                  onChange={(e) => setAdminSettings({...adminSettings, max_deposit: e.target.value})}
+                />
+                
+                <label>Реферал 1 уровня (%)</label>
+                <input
+                  type="number"
+                  value={adminSettings.ref_level1 || '10'}
+                  onChange={(e) => setAdminSettings({...adminSettings, ref_level1: e.target.value})}
+                />
+                
+                <label>Реферал 2 уровня (%)</label>
+                <input
+                  type="number"
+                  value={adminSettings.ref_level2 || '3'}
+                  onChange={(e) => setAdminSettings({...adminSettings, ref_level2: e.target.value})}
+                />
+                
+                <label>Реферал 3 уровня (%)</label>
+                <input
+                  type="number"
+                  value={adminSettings.ref_level3 || '2'}
+                  onChange={(e) => setAdminSettings({...adminSettings, ref_level3: e.target.value})}
+                />
+                
+                <button className="btn-primary" onClick={saveSettings}>💾 Сохранить настройки</button>
               </>
             )}
           </div>

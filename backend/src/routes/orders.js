@@ -361,6 +361,34 @@ router.get('/admin/transactions', async (req, res) => {
   }
 });
 
+// GET /api/admin/settings — получить настройки
+router.get('/admin/settings', async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM settings WHERE key IN ('default_markup', 'min_deposit', 'max_deposit', 'ref_level1', 'ref_level2', 'ref_level3')");
+    const settings = {};
+    result.rows.forEach(r => { settings[r.key] = r.value; });
+    res.json({ success: true, settings });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/admin/settings — сохранить настройки
+router.post('/admin/settings', async (req, res) => {
+  const { settings } = req.body;
+  try {
+    for (const [key, value] of Object.entries(settings)) {
+      await pool.query(
+        'INSERT INTO settings (key, value, description) VALUES ($1, $2, $3) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()',
+        [key, String(value), '']
+      );
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/auto/create — создать план автопродвижения
 router.post('/auto/create', async (req, res) => {
   const { userId, platform, link, goal, dailyBudget } = req.body;
