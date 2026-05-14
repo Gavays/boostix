@@ -45,6 +45,9 @@ function App() {
   const [refLink, setRefLink] = useState('')
   const [refHistory, setRefHistory] = useState([])
   const [adminData, setAdminData] = useState(null)
+  const [adminSection, setAdminSection] = useState('dashboard')
+  const [adminUsers, setAdminUsers] = useState([])
+  const [adminSearch, setAdminSearch] = useState('')
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
@@ -152,6 +155,34 @@ function App() {
     } catch {
       // ignore
     }
+  }
+
+  const loadAdminUsers = async () => {
+  try {
+    const res = await fetch(`${API_URL}/orders/admin/users?search=${adminSearch}`)
+    const data = await res.json()
+    if (data.success) setAdminUsers(data.users)
+  } catch {
+    // ignore
+  }
+}
+
+  const toggleBlockUser = async (userId, currentBlock) => {
+    await fetch(`${API_URL}/orders/admin/user/block`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, block: !currentBlock })
+    })
+    loadAdminUsers()
+  }
+
+  const changeBalance = async (userId, amount) => {
+    await fetch(`${API_URL}/orders/admin/user/balance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, amount })
+    })
+    loadAdminUsers()
   }
 
   const copyRefLink = () => {
@@ -507,28 +538,69 @@ function App() {
         {activeTab === 'admin' && (
           <div className="profile">
             <h2>⚙️ Админ-панель</h2>
-            <div className="admin-stats">
-              <div className="admin-stat-card">
-                <div className="admin-stat-num">{adminData?.totalUsers || 0}</div>
-                <div className="admin-stat-label">Пользователей</div>
-              </div>
-              <div className="admin-stat-card">
-                <div className="admin-stat-num">{adminData?.totalOrders || 0}</div>
-                <div className="admin-stat-label">Заказов</div>
-              </div>
-              <div className="admin-stat-card">
-                <div className="admin-stat-num">{adminData?.pendingOrders || 0}</div>
-                <div className="admin-stat-label">В обработке</div>
-              </div>
-              <div className="admin-stat-card">
-                <div className="admin-stat-num">{adminData?.completedOrders || 0}</div>
-                <div className="admin-stat-label">Выполнено</div>
-              </div>
-              <div className="admin-stat-card">
-                <div className="admin-stat-num">{adminData?.totalRevenue || '0'} ₽</div>
-                <div className="admin-stat-label">Выручка</div>
-              </div>
+            
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 13, background: adminSection === 'dashboard' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => setAdminSection('dashboard')}>📊 Дашборд</button>
+              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 13, background: adminSection === 'users' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('users'); loadAdminUsers() }}>👥 Пользователи</button>
             </div>
+
+            {adminSection === 'dashboard' && (
+              <div className="admin-stats">
+                <div className="admin-stat-card">
+                  <div className="admin-stat-num">{adminData?.totalUsers || 0}</div>
+                  <div className="admin-stat-label">Пользователей</div>
+                </div>
+                <div className="admin-stat-card">
+                  <div className="admin-stat-num">{adminData?.totalOrders || 0}</div>
+                  <div className="admin-stat-label">Заказов</div>
+                </div>
+                <div className="admin-stat-card">
+                  <div className="admin-stat-num">{adminData?.pendingOrders || 0}</div>
+                  <div className="admin-stat-label">В обработке</div>
+                </div>
+                <div className="admin-stat-card">
+                  <div className="admin-stat-num">{adminData?.completedOrders || 0}</div>
+                  <div className="admin-stat-label">Выполнено</div>
+                </div>
+                <div className="admin-stat-card">
+                  <div className="admin-stat-num">{adminData?.totalRevenue || '0'} ₽</div>
+                  <div className="admin-stat-label">Выручка</div>
+                </div>
+              </div>
+            )}
+
+            {adminSection === 'users' && (
+              <>
+                <input type="text" placeholder="Поиск по имени или ID..." value={adminSearch} onChange={(e) => { setAdminSearch(e.target.value); loadAdminUsers() }} style={{ marginBottom: 12 }} />
+                <div className="services-scroll" style={{ maxHeight: '500px' }}>
+                  {adminUsers.map((u, i) => (
+                    <div key={i} className="order-card">
+                      <div className="order-card-header">
+                        <span className="order-id">{u.first_name || u.username || u.telegram_id}</span>
+                        <span className={`order-status-badge ${u.is_blocked ? 'failed' : 'completed'}`}>
+                          {u.is_blocked ? '🚫 Заблокирован' : '✅ Активен'}
+                        </span>
+                      </div>
+                      <div className="order-card-body">
+                        <div>ID: {u.telegram_id}</div>
+                        <div>💰 {u.balance} ₽</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <button className="btn-primary" style={{ flex: 1, marginTop: 0, padding: '8px', fontSize: 12 }} onClick={() => toggleBlockUser(u.telegram_id, u.is_blocked)}>
+                          {u.is_blocked ? 'Разблокировать' : 'Заблокировать'}
+                        </button>
+                        <button className="btn-primary" style={{ flex: 1, marginTop: 0, padding: '8px', fontSize: 12, background: '#fbbf24', color: '#000' }} onClick={() => {
+                          const amount = prompt('Сумма (+ для начисления, - для списания):', '0')
+                          if (amount) changeBalance(u.telegram_id, parseFloat(amount))
+                        }}>
+                          💰 Баланс
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

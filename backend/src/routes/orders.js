@@ -250,6 +250,42 @@ router.get('/admin/dashboard', async (req, res) => {
   }
 });
 
+// GET /api/admin/users — список пользователей
+router.get('/admin/users', async (req, res) => {
+  try {
+    const search = req.query.search || '';
+    const result = await pool.query(
+      "SELECT id, telegram_id, first_name, username, balance, role, is_blocked, referred_by, created_at FROM users WHERE first_name ILIKE $1 OR username ILIKE $1 OR telegram_id::text ILIKE $1 ORDER BY created_at DESC LIMIT 100",
+      [`%${search}%`]
+    );
+    res.json({ success: true, users: result.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/admin/user/block — заблокировать/разблокировать
+router.post('/admin/user/block', async (req, res) => {
+  const { userId, block } = req.body;
+  try {
+    await pool.query('UPDATE users SET is_blocked = $1 WHERE telegram_id = $2', [block, userId]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/admin/user/balance — изменить баланс
+router.post('/admin/user/balance', async (req, res) => {
+  const { userId, amount } = req.body;
+  try {
+    await pool.query('UPDATE users SET balance = balance + $1 WHERE telegram_id = $2', [amount, userId]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/auto/create — создать план автопродвижения
 router.post('/auto/create', async (req, res) => {
   const { userId, platform, link, goal, dailyBudget } = req.body;
