@@ -165,7 +165,7 @@ function App() {
     try {
       const res = await fetch(`${API_URL}/orders/admin/users?search=${adminSearch}`)
       const data = await res.json()
-      if (data.success) setAdminUsers(data.users)
+      if (data.success) setAdminUsers([...data.users])
     } catch {
       // ignore
     }
