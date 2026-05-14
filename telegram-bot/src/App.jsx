@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import './index.css'
 
+// Telegram Login Widget добавляет URL параметры после авторизации
 const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
-const urlTgId = urlParams.get('tg_id')
-const urlTgName = urlParams.get('tg_name')
+const urlTgId = urlParams.get('id')
+const urlTgName = urlParams.get('first_name')
 const urlRef = urlParams.get('ref')
 
-const tg = typeof window !== 'undefined' && window.Telegram?.WebApp ? window.Telegram.WebApp : null
-const user = tg?.initDataUnsafe?.user
-const userId = user?.id ? String(user.id) : (urlTgId || 'Гость')
-const userName = user?.first_name ? String(user.first_name) : (urlTgName ? decodeURIComponent(urlTgName) : 'Пользователь')
+// Данные пользователя из URL (после Telegram Login)
+const userId = urlTgId || 'Гость'
+const userName = urlTgName ? decodeURIComponent(urlTgName) : 'Пользователь'
 
 const PLATFORMS = [
   { id: 'telegram', name: 'Telegram', icon: '/icons/boostix-telegram.png' },
@@ -45,12 +45,13 @@ function App() {
   const [refLink, setRefLink] = useState('')
   const [refHistory, setRefHistory] = useState([])
   const [balance, setBalance] = useState(0)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
   useEffect(() => {
-    if (tg) { tg.ready(); tg.expand() }
     if (userId !== 'Гость') {
+      setIsLoggedIn(true)
       fetch(`${API_URL}/orders/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -77,33 +78,14 @@ function App() {
   }, [])
 
   const topUpBalance = useCallback(() => {
-    if (!tg) { showModal('error', 'Ошибка', 'Откройте Mini App в Telegram'); return }
-    tg.showPopup({
-      title: 'Пополнение баланса',
-      message: 'Выберите сумму пополнения:\n100 ⭐ = 100 ₽\n500 ⭐ = 500 ₽\n1000 ⭐ = 1000 ₽',
-      buttons: [
-        { id: '100', type: 'default', text: '100 ⭐' },
-        { id: '500', type: 'default', text: '500 ⭐' },
-        { id: '1000', type: 'default', text: '1000 ⭐' },
-        { type: 'cancel' },
-      ]
-    }, (buttonId) => {
-      if (buttonId && buttonId !== 'cancel') {
-        const amount = parseInt(buttonId)
-        fetch(`${API_URL}/orders/topup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, amount })
-        }).then(res => res.json()).then(data => {
-          if (data.success) {
-            setBalance(b => b + amount)
-            showModal('success', '✅ Баланс пополнен!', `Начислено: ${amount} ₽`)
-          }
-        }).catch(() => {
-          showModal('error', '❌ Ошибка', 'Не удалось пополнить баланс')
-        })
-      }
-    })
+    // В веб-версии показываем реквизиты для пополнения
+    showModal('success', '💳 Пополнение баланса', 
+      'Для пополнения баланса переведите нужную сумму по реквизитам:\n\n' +
+      '💳 Карта: 2200 7000 0000 0000\n' +
+      '📱 СБП: +7 (900) 000-00-00\n\n' +
+      'После перевода напишите в поддержку @boostix_smm_bot\n' +
+      'с суммой и вашим ID: ' + userId
+    )
   }, [showModal])
 
   const validateLink = (link, platform) => {
@@ -172,7 +154,7 @@ function App() {
   const copyRefLink = useCallback(() => {
     if (refLink) {
       navigator.clipboard.writeText(refLink).then(() => {
-        showModal('success', '✅ Скопировано', 'Реферальная ссылка скопирована в буфер обмена')
+        showModal('success', '✅ Скопировано', 'Реферальная ссылка скопирована')
       }).catch(() => {
         showModal('error', 'Ошибка', 'Не удалось скопировать ссылку')
       })
@@ -234,7 +216,7 @@ function App() {
       const balanceRes = await fetch(`${API_URL}/orders/user/balance/${userId}`)
       const balanceData = await balanceRes.json()
       if (balanceData.success && balanceData.balance <= 0) {
-        showModal('error', '💰 Недостаточно средств', 'Ваш баланс пуст. Пополните его для создания заказа.', { text: '💳 Пополнить баланс', link: 'https://t.me/boostix_smm_bot' })
+        showModal('error', '💰 Недостаточно средств', 'Ваш баланс пуст. Пополните его для создания заказа.', { text: '💳 Пополнить баланс', link: '#' })
         return
       }
     } catch {}
@@ -259,6 +241,28 @@ function App() {
   }
 
   const closeModal = () => setModal(null)
+
+  // Если не авторизован — показываем кнопку входа через Telegram
+  if (!isLoggedIn) {
+    return (
+      <div className="app">
+        <div className="app-header">
+          <h1>🤖 Boostix</h1>
+          <p className="subtitle">Умное продвижение</p>
+        </div>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <p style={{ color: '#888', marginBottom: 24 }}>Авторизуйтесь через Telegram для доступа к сервису</p>
+          <script async src="https://telegram.org/js/telegram-widget.js?22" 
+            data-telegram-login="boostix_smm_bot" 
+            data-size="large" 
+            data-radius="12"
+            data-auth-url="https://boostix-app.onrender.com"
+            data-request-access="write">
+          </script>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="app">
