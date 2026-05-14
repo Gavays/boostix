@@ -235,13 +235,15 @@ router.get('/admin/dashboard', async (req, res) => {
     const orders = await pool.query('SELECT COUNT(*) FROM orders');
     const pending = await pool.query("SELECT COUNT(*) FROM orders WHERE status = 'pending' OR status = 'in_progress'");
     const completed = await pool.query("SELECT COUNT(*) FROM orders WHERE status = 'completed'");
+    const revenue = await pool.query("SELECT COALESCE(SUM(amount), 0) as total FROM transactions");
     
     res.json({
       success: true,
       totalUsers: parseInt(users.rows[0].count),
       totalOrders: parseInt(orders.rows[0].count),
       pendingOrders: parseInt(pending.rows[0].count),
-      completedOrders: parseInt(completed.rows[0].count)
+      completedOrders: parseInt(completed.rows[0].count),
+      totalRevenue: parseFloat(revenue.rows[0].total)
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

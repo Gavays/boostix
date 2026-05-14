@@ -30,15 +30,6 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.get('/api/make-admin', async (req, res) => {
-  try {
-    await pool.query("UPDATE users SET role = 'admin' WHERE telegram_id = '6582074422'");
-    res.json({ success: true, message: 'Админ назначен' });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
-});
-
 async function start() {
   try {
     await initDatabase();

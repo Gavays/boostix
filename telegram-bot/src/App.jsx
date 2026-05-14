@@ -524,6 +524,10 @@ function App() {
                 <div className="admin-stat-num">{adminData?.completedOrders || 0}</div>
                 <div className="admin-stat-label">Выполнено</div>
               </div>
+              <div className="admin-stat-card">
+                <div className="admin-stat-num">{adminData?.totalRevenue || '0'} ₽</div>
+                <div className="admin-stat-label">Выручка</div>
+              </div>
             </div>
           </div>
         )}
