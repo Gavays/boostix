@@ -34,41 +34,41 @@ body {
 
 .app-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   flex-shrink: 0;
 }
 
 .app-header h1 {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 800;
   color: #a78bfa;
   margin-bottom: 2px;
 }
 
 .app-header .subtitle {
-  font-size: 13px;
+  font-size: 12px;
   color: #555;
 }
 
 .tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: 4px;
+  margin-bottom: 16px;
   background: #111;
   border-radius: 14px;
-  padding: 4px;
+  padding: 3px;
   flex-shrink: 0;
 }
 
 .tabs button {
   flex: 1;
-  padding: 12px 6px;
+  padding: 10px 4px;
   border: none;
   background: transparent;
   color: #888;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   transition: all 0.2s;
   white-space: nowrap;
@@ -83,6 +83,7 @@ body {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .smart-tab {
@@ -92,23 +93,23 @@ body {
 
 .smart-hero {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .smart-icon {
-  font-size: 48px;
+  font-size: 40px;
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .smart-hero h2 {
-  font-size: 22px;
-  margin-bottom: 6px;
+  font-size: 20px;
+  margin-bottom: 4px;
 }
 
 .smart-hero p {
   color: #888;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
   max-width: 340px;
   margin: 0 auto;
@@ -121,7 +122,7 @@ body {
   border: 2px solid #333;
   border-radius: 14px;
   padding: 0 14px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   transition: border-color 0.2s;
 }
 
@@ -130,17 +131,17 @@ body {
 }
 
 .smart-input-icon {
-  font-size: 20px;
+  font-size: 18px;
   margin-right: 10px;
 }
 
 .smart-input-group input {
   flex: 1;
-  padding: 16px 0;
+  padding: 14px 0;
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   outline: none;
 }
 
@@ -152,8 +153,8 @@ body {
   background: #111;
   border: 1px solid #222;
   border-radius: 18px;
-  padding: 20px;
-  margin-top: 20px;
+  padding: 16px;
+  margin-top: 16px;
   animation: fadeIn 0.3s ease;
 }
 
@@ -165,18 +166,18 @@ body {
 .smart-result-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 14px;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid #222;
 }
 
 .smart-result-icon {
-  font-size: 32px;
+  font-size: 28px;
 }
 
 .smart-result-label {
-  font-size: 10px;
+  font-size: 9px;
   color: #888;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -184,23 +185,23 @@ body {
 }
 
 .smart-result-platform {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #a78bfa;
 }
 
 .smart-result-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   color: #ccc;
 }
 
 .suggestions-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 300px;
+  gap: 6px;
+  max-height: 250px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #7c3aed transparent;
@@ -223,7 +224,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px;
+  padding: 12px;
   background: #1a1a1a;
   border: 2px solid #333;
   border-radius: 12px;
@@ -243,22 +244,22 @@ body {
 .suggestion-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .suggestion-icon {
-  font-size: 24px;
+  font-size: 22px;
 }
 
 .suggestion-name {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   margin-bottom: 2px;
 }
 
 .suggestion-badge {
-  font-size: 10px;
-  padding: 3px 8px;
+  font-size: 9px;
+  padding: 2px 6px;
   border-radius: 6px;
   display: inline-block;
   font-weight: 600;
@@ -277,39 +278,39 @@ body {
 .suggestion-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .suggestion-price {
   color: #a78bfa;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .suggestion-arrow {
   color: #555;
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .order-subtitle {
   color: #888;
-  font-size: 13px;
-  margin-bottom: 20px;
+  font-size: 12px;
+  margin-bottom: 16px;
   text-align: center;
 }
 
 .platforms-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .platform-card {
   background: #111;
   border: 2px solid #222;
   border-radius: 16px;
-  padding: 20px 10px;
+  padding: 16px 8px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
@@ -326,10 +327,10 @@ body {
 }
 
 .platform-card-icon-img {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   object-fit: contain;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   transition: transform 0.3s ease;
 }
 
@@ -338,7 +339,7 @@ body {
 }
 
 .platform-card-name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #ccc;
 }
@@ -346,26 +347,26 @@ body {
 .step-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .back-btn {
   background: none;
   border: none;
   color: #7c3aed;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 4px 6px;
 }
 
 .service-detail-card {
   background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 8px;
+  padding: 12px;
+  margin-bottom: 6px;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -375,9 +376,9 @@ body {
 }
 
 .service-detail-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: #ccc;
   line-height: 1.4;
 }
@@ -385,23 +386,23 @@ body {
 .service-detail-info {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 4px;
   margin-bottom: 4px;
 }
 
 .service-detail-price {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: #a78bfa;
 }
 
 .service-detail-unit {
-  font-size: 13px;
+  font-size: 12px;
   color: #888;
 }
 
 .service-detail-limits {
-  font-size: 12px;
+  font-size: 11px;
   color: #666;
 }
 
@@ -409,20 +410,20 @@ body {
   background: rgba(124, 58, 237, 0.08);
   border: 1px solid #7c3aed;
   border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
 }
 
 .selected-service-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: #a78bfa;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .selected-service-meta {
   display: flex;
-  gap: 20px;
+  gap: 16px;
 }
 
 .meta-item {
@@ -432,13 +433,13 @@ body {
 }
 
 .meta-label {
-  font-size: 10px;
+  font-size: 9px;
   color: #888;
   text-transform: uppercase;
 }
 
 .meta-value {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
 }
@@ -455,11 +456,11 @@ body {
 
 .quantity-control input {
   flex: 1;
-  padding: 14px 8px;
+  padding: 12px 8px;
   background: transparent;
   border: none;
   text-align: center;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #fff;
   min-width: 0;
@@ -470,12 +471,12 @@ body {
 }
 
 .quantity-btn {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   background: #222;
   border: none;
   color: #a78bfa;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -507,38 +508,38 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .quantity-hint {
-  font-size: 12px;
+  font-size: 11px;
   color: #666;
   margin-top: 4px;
 }
 
 .order-total {
   text-align: center;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 10px;
+  padding: 10px;
   background: #1a1a1a;
   border-radius: 10px;
 }
 
 .services-section {
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
 .services-section h3 {
-  font-size: 16px;
-  margin-bottom: 12px;
+  font-size: 15px;
+  margin-bottom: 10px;
   color: #a78bfa;
 }
 
 .services-scroll {
-  max-height: 400px;
+  max-height: 350px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 6px;
+  margin-bottom: 16px;
   scrollbar-width: thin;
   scrollbar-color: #7c3aed transparent;
 }
@@ -564,7 +565,7 @@ input[type="number"]::-webkit-outer-spin-button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 14px;
+  padding: 10px 12px;
   background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 10px;
@@ -582,15 +583,15 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .service-mini-name {
-  font-size: 13px;
+  font-size: 12px;
   color: #ccc;
   flex: 1;
-  margin-right: 10px;
+  margin-right: 8px;
   line-height: 1.4;
 }
 
 .service-mini-price {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: #a78bfa;
   white-space: nowrap;
@@ -598,16 +599,16 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .btn-primary {
   width: 100%;
-  padding: 16px;
+  padding: 14px;
   background: #7c3aed;
   color: #fff;
   border: none;
   border-radius: 14px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
-  margin-top: 20px;
+  margin-top: 16px;
 }
 
 .btn-primary:hover {
@@ -621,27 +622,27 @@ input[type="number"]::-webkit-outer-spin-button {
 .order-form h2,
 .auto-tab h2,
 .profile h2 {
-  font-size: 22px;
-  margin-bottom: 16px;
+  font-size: 20px;
+  margin-bottom: 14px;
 }
 
 label {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   color: #999;
   font-weight: 600;
-  margin-bottom: 6px;
-  margin-top: 18px;
+  margin-bottom: 4px;
+  margin-top: 14px;
 }
 
 input {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   background: #1a1a1a;
   border: 2px solid #333;
   border-radius: 12px;
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   transition: border-color 0.2s;
 }
 
@@ -661,24 +662,24 @@ input::placeholder {
 
 .auto-tab p {
   color: #888;
-  font-size: 14px;
+  font-size: 13px;
   margin-bottom: 0;
   line-height: 1.5;
 }
 
 .auto-plan {
-  margin-top: 20px;
+  margin-top: 16px;
   background: #111;
   border: 1px solid #333;
   border-radius: 14px;
-  padding: 18px;
+  padding: 16px;
 }
 
 .plan-row {
   display: flex;
   justify-content: space-between;
-  padding: 10px 0;
-  font-size: 14px;
+  padding: 8px 0;
+  font-size: 13px;
   border-bottom: 1px solid #1a1a1a;
 }
 
@@ -687,10 +688,10 @@ input::placeholder {
 }
 
 .progress-bar {
-  height: 8px;
+  height: 6px;
   background: #1a1a1a;
   border-radius: 4px;
-  margin: 14px 0;
+  margin: 12px 0;
 }
 
 .progress-fill {
@@ -701,26 +702,26 @@ input::placeholder {
 }
 
 .plan-status {
-  font-size: 13px;
+  font-size: 12px;
   color: #4ade80;
   font-weight: 600;
 }
 
 .profile p {
-  padding: 14px;
+  padding: 12px;
   background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 12px;
-  margin-bottom: 8px;
-  font-size: 15px;
+  margin-bottom: 6px;
+  font-size: 14px;
 }
 
 .profile-balance {
-  padding: 18px;
+  padding: 16px;
   background: rgba(124, 58, 237, 0.08);
   border: 2px solid #7c3aed;
   border-radius: 14px;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   text-align: center;
 }
@@ -730,24 +731,24 @@ input::placeholder {
   background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 14px;
-  padding: 16px 10px;
+  padding: 14px 8px;
   text-align: center;
 }
 
 .ref-level-num {
-  font-size: 12px;
+  font-size: 11px;
   color: #888;
   margin-bottom: 4px;
 }
 
 .ref-level-percent {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 800;
   color: #a78bfa;
 }
 
 .ref-level-count {
-  font-size: 13px;
+  font-size: 12px;
   color: #ccc;
   margin-top: 4px;
 }
@@ -755,36 +756,37 @@ input::placeholder {
 .admin-stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
 .admin-stat-card {
   background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 14px;
-  padding: 18px;
+  padding: 16px;
   text-align: center;
 }
 
 .admin-stat-num {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 800;
   color: #a78bfa;
 }
 
 .admin-stat-label {
-  font-size: 12px;
+  font-size: 11px;
   color: #888;
   margin-top: 4px;
 }
 
 .orders-history {
-  margin-top: 24px;
-  max-height: 400px;
+  margin-top: 20px;
+  max-height: 350px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #7c3aed transparent;
+  -webkit-overflow-scrolling: touch;
 }
 
 .orders-history::-webkit-scrollbar {
@@ -804,11 +806,11 @@ input::placeholder {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .orders-history-header h3 {
-  font-size: 16px;
+  font-size: 15px;
   color: #a78bfa;
   margin: 0;
 }
@@ -818,9 +820,9 @@ input::placeholder {
   border: 1px solid #333;
   border-radius: 10px;
   color: #a78bfa;
-  font-size: 18px;
-  width: 40px;
-  height: 36px;
+  font-size: 16px;
+  width: 36px;
+  height: 32px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -835,35 +837,35 @@ input::placeholder {
 
 .orders-empty {
   color: #666;
-  font-size: 14px;
+  font-size: 13px;
   text-align: center;
-  padding: 24px;
+  padding: 20px;
 }
 
 .order-card {
   background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 8px;
+  padding: 12px;
+  margin-bottom: 6px;
 }
 
 .order-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .order-id {
   font-weight: 700;
   color: #a78bfa;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .order-status-badge {
-  font-size: 12px;
-  padding: 3px 10px;
+  font-size: 11px;
+  padding: 2px 8px;
   border-radius: 8px;
   font-weight: 600;
 }
@@ -886,13 +888,13 @@ input::placeholder {
 .order-card-body {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
+  font-size: 12px;
   color: #888;
   margin-bottom: 4px;
 }
 
 .order-card-date {
-  font-size: 11px;
+  font-size: 10px;
   color: #555;
 }
 
@@ -959,6 +961,26 @@ input::placeholder {
     padding: 0;
   }
   .app {
-    padding: 12px;
+    padding: 8px;
+  }
+  .app-header h1 {
+    font-size: 20px;
+  }
+  .tabs button {
+    font-size: 10px;
+    padding: 8px 2px;
+  }
+  .smart-icon {
+    font-size: 36px;
+  }
+  .smart-hero h2 {
+    font-size: 18px;
+  }
+  .platform-card-icon-img {
+    width: 44px;
+    height: 44px;
+  }
+  .platform-card {
+    padding: 14px 6px;
   }
 }
