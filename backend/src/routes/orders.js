@@ -286,6 +286,60 @@ router.post('/admin/user/balance', async (req, res) => {
   }
 });
 
+// GET /api/admin/orders — все заказы с фильтрацией
+router.get('/admin/orders', async (req, res) => {
+  try {
+    const status = req.query.status || 'all';
+    let query = 'SELECT * FROM orders';
+    const params = [];
+    
+    if (status !== 'all') {
+      query += ' WHERE status = $1';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY created_at DESC LIMIT 100';
+    
+    const result = await pool.query(query, params);
+    res.json({ success: true, orders: result.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/admin/order/refresh — ручное обновление статуса заказа
+router.post('/admin/order/refresh', async (req, res) => {
+  const { orderId } = req.body;
+  try {
+    const order = await pool.query('SELECT * FROM orders WHERE provider_order_id = $1', [orderId]);
+    if (order.rows.length === 0) {
+      return res.json({ success: false, error: 'Заказ не найден' });
+    }
+    
+    const status = await providerClient.getOrderStatus(orderId);
+    
+    let newStatus = order.rows[0].status;
+    if (status.error) {
+      newStatus = 'failed';
+    } else {
+      const s = status.status;
+      if (typeof s === 'string') {
+        const sl = s.toLowerCase();
+        if (sl.includes('complete')) newStatus = 'completed';
+        else if (sl.includes('cancel')) newStatus = 'cancelled';
+        else if (sl.includes('progress')) newStatus = 'in_progress';
+        else if (sl.includes('pending')) newStatus = 'pending';
+        else if (sl.includes('partial')) newStatus = 'completed';
+      }
+    }
+    
+    await pool.query('UPDATE orders SET status = $1 WHERE provider_order_id = $2', [newStatus, orderId]);
+    res.json({ success: true, newStatus });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/auto/create — создать план автопродвижения
 router.post('/auto/create', async (req, res) => {
   const { userId, platform, link, goal, dailyBudget } = req.body;

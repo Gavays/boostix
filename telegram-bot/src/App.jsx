@@ -48,6 +48,8 @@ function App() {
   const [adminSection, setAdminSection] = useState('dashboard')
   const [adminUsers, setAdminUsers] = useState([])
   const [adminSearch, setAdminSearch] = useState('')
+  const [adminOrders, setAdminOrders] = useState([])
+  const [adminOrderStatus, setAdminOrderStatus] = useState('all')
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
@@ -158,14 +160,24 @@ function App() {
   }
 
   const loadAdminUsers = async () => {
-  try {
-    const res = await fetch(`${API_URL}/orders/admin/users?search=${adminSearch}`)
-    const data = await res.json()
-    if (data.success) setAdminUsers(data.users)
-  } catch {
-    // ignore
+    try {
+      const res = await fetch(`${API_URL}/orders/admin/users?search=${adminSearch}`)
+      const data = await res.json()
+      if (data.success) setAdminUsers(data.users)
+    } catch {
+      // ignore
+    }
   }
-}
+
+  const loadAdminOrders = async () => {
+    try {
+      const res = await fetch(`${API_URL}/orders/admin/orders?status=${adminOrderStatus}`)
+      const data = await res.json()
+      if (data.success) setAdminOrders(data.orders)
+    } catch {
+      // ignore
+    }
+  }
 
   const toggleBlockUser = async (userId, currentBlock) => {
     await fetch(`${API_URL}/orders/admin/user/block`, {
@@ -183,6 +195,15 @@ function App() {
       body: JSON.stringify({ userId, amount })
     })
     loadAdminUsers()
+  }
+
+  const refreshOrder = async (orderId) => {
+    await fetch(`${API_URL}/orders/admin/order/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId })
+    })
+    loadAdminOrders()
   }
 
   const copyRefLink = () => {
@@ -542,30 +563,16 @@ function App() {
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
               <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 13, background: adminSection === 'dashboard' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => setAdminSection('dashboard')}>📊 Дашборд</button>
               <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 13, background: adminSection === 'users' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('users'); loadAdminUsers() }}>👥 Пользователи</button>
+              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 13, background: adminSection === 'orders' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('orders'); loadAdminOrders() }}>📦 Заказы</button>
             </div>
 
             {adminSection === 'dashboard' && (
               <div className="admin-stats">
-                <div className="admin-stat-card">
-                  <div className="admin-stat-num">{adminData?.totalUsers || 0}</div>
-                  <div className="admin-stat-label">Пользователей</div>
-                </div>
-                <div className="admin-stat-card">
-                  <div className="admin-stat-num">{adminData?.totalOrders || 0}</div>
-                  <div className="admin-stat-label">Заказов</div>
-                </div>
-                <div className="admin-stat-card">
-                  <div className="admin-stat-num">{adminData?.pendingOrders || 0}</div>
-                  <div className="admin-stat-label">В обработке</div>
-                </div>
-                <div className="admin-stat-card">
-                  <div className="admin-stat-num">{adminData?.completedOrders || 0}</div>
-                  <div className="admin-stat-label">Выполнено</div>
-                </div>
-                <div className="admin-stat-card">
-                  <div className="admin-stat-num">{adminData?.totalRevenue || '0'} ₽</div>
-                  <div className="admin-stat-label">Выручка</div>
-                </div>
+                <div className="admin-stat-card"><div className="admin-stat-num">{adminData?.totalUsers || 0}</div><div className="admin-stat-label">Пользователей</div></div>
+                <div className="admin-stat-card"><div className="admin-stat-num">{adminData?.totalOrders || 0}</div><div className="admin-stat-label">Заказов</div></div>
+                <div className="admin-stat-card"><div className="admin-stat-num">{adminData?.pendingOrders || 0}</div><div className="admin-stat-label">В обработке</div></div>
+                <div className="admin-stat-card"><div className="admin-stat-num">{adminData?.completedOrders || 0}</div><div className="admin-stat-label">Выполнено</div></div>
+                <div className="admin-stat-card"><div className="admin-stat-num">{adminData?.totalRevenue || '0'} ₽</div><div className="admin-stat-label">Выручка</div></div>
               </div>
             )}
 
@@ -577,25 +584,44 @@ function App() {
                     <div key={i} className="order-card">
                       <div className="order-card-header">
                         <span className="order-id">{u.first_name || u.username || u.telegram_id}</span>
-                        <span className={`order-status-badge ${u.is_blocked ? 'failed' : 'completed'}`}>
-                          {u.is_blocked ? '🚫 Заблокирован' : '✅ Активен'}
+                        <span className={`order-status-badge ${u.is_blocked ? 'failed' : 'completed'}`}>{u.is_blocked ? '🚫 Заблокирован' : '✅ Активен'}</span>
+                      </div>
+                      <div className="order-card-body"><div>ID: {u.telegram_id}</div><div>💰 {u.balance} ₽</div></div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                        <button className="btn-primary" style={{ flex: 1, marginTop: 0, padding: '8px', fontSize: 12 }} onClick={() => toggleBlockUser(u.telegram_id, u.is_blocked)}>{u.is_blocked ? 'Разблокировать' : 'Заблокировать'}</button>
+                        <button className="btn-primary" style={{ flex: 1, marginTop: 0, padding: '8px', fontSize: 12, background: '#fbbf24', color: '#000' }} onClick={() => { const amount = prompt('Сумма:', '0'); if (amount) changeBalance(u.telegram_id, parseFloat(amount)) }}>💰 Баланс</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {adminSection === 'orders' && (
+              <>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+                  {['all', 'pending', 'in_progress', 'completed', 'cancelled', 'failed'].map(s => (
+                    <button key={s} style={{ flex: 1, padding: '8px 2px', fontSize: 11, background: adminOrderStatus === s ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminOrderStatus(s); loadAdminOrders() }}>
+                      {s === 'all' ? 'Все' : s === 'pending' ? '⏳' : s === 'in_progress' ? '🔄' : s === 'completed' ? '✅' : s === 'cancelled' ? '🚫' : '❌'}
+                    </button>
+                  ))}
+                </div>
+                <div className="services-scroll" style={{ maxHeight: '500px' }}>
+                  {adminOrders.map((o, i) => (
+                    <div key={i} className="order-card">
+                      <div className="order-card-header">
+                        <span className="order-id">#{o.provider_order_id?.slice(0, 10)}</span>
+                        <span className={`order-status-badge ${o.status === 'completed' ? 'completed' : o.status === 'failed' ? 'failed' : 'pending'}`}>
+                          {o.status === 'pending' && '⏳ Ожидает'}
+                          {o.status === 'in_progress' && '🔄 Выполняется'}
+                          {o.status === 'completed' && '✅ Выполнен'}
+                          {o.status === 'cancelled' && '🚫 Отменён'}
+                          {o.status === 'failed' && '❌ Ошибка'}
                         </span>
                       </div>
-                      <div className="order-card-body">
-                        <div>ID: {u.telegram_id}</div>
-                        <div>💰 {u.balance} ₽</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                        <button className="btn-primary" style={{ flex: 1, marginTop: 0, padding: '8px', fontSize: 12 }} onClick={() => toggleBlockUser(u.telegram_id, u.is_blocked)}>
-                          {u.is_blocked ? 'Разблокировать' : 'Заблокировать'}
-                        </button>
-                        <button className="btn-primary" style={{ flex: 1, marginTop: 0, padding: '8px', fontSize: 12, background: '#fbbf24', color: '#000' }} onClick={() => {
-                          const amount = prompt('Сумма (+ для начисления, - для списания):', '0')
-                          if (amount) changeBalance(u.telegram_id, parseFloat(amount))
-                        }}>
-                          💰 Баланс
-                        </button>
-                      </div>
+                      <div className="order-card-body"><div className="order-link" title={o.link}>{o.link?.slice(0, 40)}</div><div className="order-quantity">{o.quantity} шт</div></div>
+                      <div className="order-card-body"><div>👤 ID: {o.user_id}</div><div>{new Date(o.created_at).toLocaleString('ru-RU')}</div></div>
+                      <button className="btn-primary" style={{ marginTop: 8, padding: '8px', fontSize: 12 }} onClick={() => refreshOrder(o.provider_order_id)}>🔄 Обновить статус</button>
                     </div>
                   ))}
                 </div>
@@ -612,13 +638,9 @@ function App() {
             <div className="modal-title">{modal.title}</div>
             <div className="modal-message">{modal.message}</div>
             {modal.action && (
-              <a href={modal.action.link} target="_blank" className="btn-primary" style={{ marginTop: 12, textDecoration: 'none', display: 'block' }}>
-                {modal.action.text}
-              </a>
+              <a href={modal.action.link} target="_blank" className="btn-primary" style={{ marginTop: 12, textDecoration: 'none', display: 'block' }}>{modal.action.text}</a>
             )}
-            <button className="btn-primary" onClick={closeModal} style={{ marginTop: 8 }}>
-              {modal.type === 'success' ? 'Отлично' : 'Закрыть'}
-            </button>
+            <button className="btn-primary" onClick={closeModal} style={{ marginTop: 8 }}>{modal.type === 'success' ? 'Отлично' : 'Закрыть'}</button>
           </div>
         </div>
       )}
