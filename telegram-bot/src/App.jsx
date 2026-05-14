@@ -44,12 +44,12 @@ function App() {
   const [refStats, setRefStats] = useState(null)
   const [refLink, setRefLink] = useState('')
   const [refHistory, setRefHistory] = useState([])
+  const [adminData, setAdminData] = useState(null)
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
   useEffect(() => {
     if (tg) { tg.ready(); tg.expand() }
-    // Регистрируем всегда, если есть ID
     if (userId !== 'Гость') {
       fetch(`${API_URL}/orders/user/register`, {
         method: 'POST',
@@ -139,6 +139,16 @@ function App() {
       if (stats.success) setRefStats(stats)
       if (link.success) setRefLink(link.link)
       if (history.success) setRefHistory(history.history)
+    } catch {
+      // ignore
+    }
+  }
+
+  const loadAdminData = async () => {
+    try {
+      const res = await fetch(`${API_URL}/orders/admin/dashboard`)
+      const data = await res.json()
+      if (data.success) setAdminData(data)
     } catch {
       // ignore
     }
@@ -268,6 +278,9 @@ function App() {
         <button className={activeTab === 'order' ? 'active' : ''} onClick={() => { setActiveTab('order'); setStep('platforms'); setSelectedPlatform(null); setSelectedService(null) }}>⚡ Заказ</button>
         <button className={activeTab === 'ref' ? 'active' : ''} onClick={() => { setActiveTab('ref'); loadRefData() }}>👥 Рефералы</button>
         <button className={activeTab === 'profile' ? 'active' : ''} onClick={() => { setActiveTab('profile'); loadOrders() }}>👤 Профиль</button>
+        {userName === 'Manager_EGL' && (
+          <button className={activeTab === 'admin' ? 'active' : ''} onClick={() => { setActiveTab('admin'); loadAdminData() }}>⚙️</button>
+        )}
       </div>
 
       <div className="tab-content">
@@ -487,6 +500,30 @@ function App() {
                   <div className="order-card-date">{new Date(o.created_at).toLocaleString('ru-RU')}</div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'admin' && (
+          <div className="profile">
+            <h2>⚙️ Админ-панель</h2>
+            <div className="admin-stats">
+              <div className="admin-stat-card">
+                <div className="admin-stat-num">{adminData?.totalUsers || 0}</div>
+                <div className="admin-stat-label">Пользователей</div>
+              </div>
+              <div className="admin-stat-card">
+                <div className="admin-stat-num">{adminData?.totalOrders || 0}</div>
+                <div className="admin-stat-label">Заказов</div>
+              </div>
+              <div className="admin-stat-card">
+                <div className="admin-stat-num">{adminData?.pendingOrders || 0}</div>
+                <div className="admin-stat-label">В обработке</div>
+              </div>
+              <div className="admin-stat-card">
+                <div className="admin-stat-num">{adminData?.completedOrders || 0}</div>
+                <div className="admin-stat-label">Выполнено</div>
+              </div>
             </div>
           </div>
         )}

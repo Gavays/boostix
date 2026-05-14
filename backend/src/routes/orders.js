@@ -23,7 +23,6 @@ router.post('/', async (req, res) => {
         [userId, String(result.orderId), link, quantity, 'pending']
       );
       
-      // Начисляем реферальные проценты
       try {
         const refUser = await pool.query('SELECT referred_by FROM users WHERE telegram_id = $1', [userId]);
         if (refUser.rows[0]?.referred_by) {
@@ -224,6 +223,26 @@ router.get('/referral/history/:userId', async (req, res) => {
       [req.params.userId]
     );
     res.json({ success: true, history: result.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/admin/dashboard — статистика для админа
+router.get('/admin/dashboard', async (req, res) => {
+  try {
+    const users = await pool.query('SELECT COUNT(*) FROM users');
+    const orders = await pool.query('SELECT COUNT(*) FROM orders');
+    const pending = await pool.query("SELECT COUNT(*) FROM orders WHERE status = 'pending' OR status = 'in_progress'");
+    const completed = await pool.query("SELECT COUNT(*) FROM orders WHERE status = 'completed'");
+    
+    res.json({
+      success: true,
+      totalUsers: parseInt(users.rows[0].count),
+      totalOrders: parseInt(orders.rows[0].count),
+      pendingOrders: parseInt(pending.rows[0].count),
+      completedOrders: parseInt(completed.rows[0].count)
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
