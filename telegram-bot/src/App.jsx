@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import './index.css'
 
-// Telegram Login Widget добавляет URL параметры после авторизации
 const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
 const urlTgId = urlParams.get('id')
 const urlTgName = urlParams.get('first_name')
 const urlRef = urlParams.get('ref')
 
-// Данные пользователя из URL (после Telegram Login)
 const userId = urlTgId || 'Гость'
 const userName = urlTgName ? decodeURIComponent(urlTgName) : 'Пользователь'
 
@@ -45,13 +43,12 @@ function App() {
   const [refLink, setRefLink] = useState('')
   const [refHistory, setRefHistory] = useState([])
   const [balance, setBalance] = useState(0)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const isLoggedIn = userId !== 'Гость'
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
   useEffect(() => {
-    if (userId !== 'Гость') {
-      setIsLoggedIn(true)
+    if (isLoggedIn) {
       fetch(`${API_URL}/orders/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -69,7 +66,7 @@ function App() {
   }, [])
 
   const loadBalance = useCallback(async () => {
-    if (userId === 'Гость') return
+    if (!isLoggedIn) return
     try {
       const res = await fetch(`${API_URL}/orders/user/balance/${userId}`)
       const data = await res.json()
@@ -78,8 +75,7 @@ function App() {
   }, [])
 
   const topUpBalance = useCallback(() => {
-    // В веб-версии показываем реквизиты для пополнения
-    showModal('success', '💳 Пополнение баланса', 
+    showModal('success', '💳 Пополнение баланса',
       'Для пополнения баланса переведите нужную сумму по реквизитам:\n\n' +
       '💳 Карта: 2200 7000 0000 0000\n' +
       '📱 СБП: +7 (900) 000-00-00\n\n' +
@@ -102,18 +98,18 @@ function App() {
     const isViews = name.includes('просмотр') || name.includes('view')
     const isComments = name.includes('комментар') || name.includes('comment')
     const isReposts = name.includes('репост') || name.includes('repost') || name.includes('поделить')
-    
+
     if (isFollowers) {
       const postPatterns = ['/post/', '/video/', '/reel/', '/story/', '/photo/']
       const hasPostPattern = postPatterns.some(p => link.toLowerCase().includes(p))
       if (hasPostPattern) return { valid: false, message: 'Для подписчиков нужна ссылка на профиль или канал, а не на пост/видео.' }
     }
-    
+
     if (isReactions || isLikes || isViews || isComments || isReposts) {
       const hasPostIndicators = link.includes('/post/') || link.includes('/video/') || link.includes('/reel/') || link.includes('/story/') || (link.match(/\//g) || []).length > 3
       if (!hasPostIndicators) return { valid: false, message: 'Для данной услуги нужна ссылка на конкретный пост, видео или публикацию.' }
     }
-    
+
     return { valid: true }
   }
 
@@ -125,7 +121,7 @@ function App() {
   }
 
   const loadOrders = useCallback(async () => {
-    if (userId === 'Гость') return
+    if (!isLoggedIn) return
     try {
       await fetch(`${API_URL}/orders/refresh/${userId}`, { method: 'POST' }).catch(() => {})
       const res = await fetch(`${API_URL}/orders/user/orders/${userId}`)
@@ -135,7 +131,7 @@ function App() {
   }, [])
 
   const loadRefData = useCallback(async () => {
-    if (userId === 'Гость') return
+    if (!isLoggedIn) return
     try {
       const [statsRes, linkRes, historyRes] = await Promise.all([
         fetch(`${API_URL}/orders/referral/stats/${userId}`),
@@ -225,7 +221,7 @@ function App() {
       const res = await fetch(`${API_URL}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serviceId: selectedService.service, link, quantity, userId: userId !== 'Гость' ? userId : null })
+        body: JSON.stringify({ serviceId: selectedService.service, link, quantity, userId: isLoggedIn ? userId : null })
       })
       const data = await res.json()
       if (data.success) {
@@ -242,7 +238,6 @@ function App() {
 
   const closeModal = () => setModal(null)
 
-  // Если не авторизован — показываем кнопку входа через Telegram
   if (!isLoggedIn) {
     return (
       <div className="app">
@@ -252,13 +247,6 @@ function App() {
         </div>
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <p style={{ color: '#888', marginBottom: 24 }}>Авторизуйтесь через Telegram для доступа к сервису</p>
-          <script async src="https://telegram.org/js/telegram-widget.js?22" 
-            data-telegram-login="boostix_smm_bot" 
-            data-size="large" 
-            data-radius="12"
-            data-auth-url="https://boostix-app.onrender.com"
-            data-request-access="write">
-          </script>
         </div>
       </div>
     )
