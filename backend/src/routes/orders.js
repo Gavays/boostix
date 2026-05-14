@@ -17,12 +17,24 @@ router.post('/', async (req, res) => {
   try {
     const result = await providerClient.createOrder(serviceId, link, quantity);
     
+    // Считаем стоимость заказа
+    const services = await providerClient.getServices();
+    const service = Array.isArray(services) ? services.find(s => s.service == serviceId) : null;
+    const serviceRate = service ? parseFloat(service.rate) : 0;
+    const orderCost = parseFloat((serviceRate / 1000 * quantity).toFixed(2));
+    
     if (userId && userId !== 'Гость') {
+      // Списываем с баланса
+      if (orderCost > 0) {
+        await pool.query('UPDATE users SET balance = balance - $1 WHERE telegram_id = $2', [orderCost, userId]);
+      }
+      
       await pool.query(
         'INSERT INTO orders (user_id, provider_order_id, link, quantity, status) VALUES ($1, $2, $3, $4, $5)',
         [userId, String(result.orderId), link, quantity, 'pending']
       );
       
+      // Начисляем реферальные проценты
       try {
         const refUser = await pool.query('SELECT referred_by FROM users WHERE telegram_id = $1', [userId]);
         if (refUser.rows[0]?.referred_by) {
@@ -31,7 +43,7 @@ router.post('/', async (req, res) => {
           
           for (let i = 0; i < levels.length; i++) {
             if (!refId) break;
-            const amount = parseFloat((quantity * 1 / 1000 * levels[i]).toFixed(2));
+            const amount = parseFloat((orderCost * levels[i]).toFixed(2));
             if (amount > 0) {
               await pool.query(
                 "INSERT INTO transactions (user_id, type, amount, description) VALUES ($1, 'referral', $2, $3)",
@@ -53,6 +65,26 @@ router.post('/', async (req, res) => {
       orderId: result.orderId,
       message: 'Заказ создан' 
     });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/orders/topup — пополнение баланса
+router.post('/topup', async (req, res) => {
+  const { userId, amount } = req.body;
+  
+  if (!userId || !amount) {
+    return res.status(400).json({ success: false, error: 'userId и amount обязательны' });
+  }
+  
+  try {
+    await pool.query('UPDATE users SET balance = balance + $1 WHERE telegram_id = $2', [amount, userId]);
+    await pool.query(
+      "INSERT INTO transactions (user_id, type, amount, description) VALUES ($1, 'deposit', $2, $3)",
+      [userId, amount, `Пополнение баланса через Telegram Stars`]
+    );
+    res.json({ success: true, message: 'Баланс пополнен' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -178,23 +210,10 @@ router.post('/user/register', async (req, res) => {
 // GET /api/referral/stats/:userId — статистика рефералов
 router.get('/referral/stats/:userId', async (req, res) => {
   try {
-    const level1 = await pool.query(
-      'SELECT COUNT(*) FROM users WHERE referred_by = $1',
-      [req.params.userId]
-    );
-    const level2 = await pool.query(
-      'SELECT COUNT(*) FROM users WHERE referred_by IN (SELECT telegram_id FROM users WHERE referred_by = $1)',
-      [req.params.userId]
-    );
-    const level3 = await pool.query(
-      'SELECT COUNT(*) FROM users WHERE referred_by IN (SELECT telegram_id FROM users WHERE referred_by IN (SELECT telegram_id FROM users WHERE referred_by = $1))',
-      [req.params.userId]
-    );
-    
-    const earnings = await pool.query(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'referral'",
-      [req.params.userId]
-    );
+    const level1 = await pool.query('SELECT COUNT(*) FROM users WHERE referred_by = $1', [req.params.userId]);
+    const level2 = await pool.query('SELECT COUNT(*) FROM users WHERE referred_by IN (SELECT telegram_id FROM users WHERE referred_by = $1)', [req.params.userId]);
+    const level3 = await pool.query('SELECT COUNT(*) FROM users WHERE referred_by IN (SELECT telegram_id FROM users WHERE referred_by IN (SELECT telegram_id FROM users WHERE referred_by = $1))', [req.params.userId]);
+    const earnings = await pool.query("SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = $1 AND type = 'referral'", [req.params.userId]);
     
     res.json({
       success: true,
@@ -228,186 +247,18 @@ router.get('/referral/history/:userId', async (req, res) => {
   }
 });
 
-// GET /api/admin/dashboard — статистика для админа
-router.get('/admin/dashboard', async (req, res) => {
-  try {
-    const users = await pool.query('SELECT COUNT(*) FROM users');
-    const orders = await pool.query('SELECT COUNT(*) FROM orders');
-    const pending = await pool.query("SELECT COUNT(*) FROM orders WHERE status = 'pending' OR status = 'in_progress'");
-    const completed = await pool.query("SELECT COUNT(*) FROM orders WHERE status = 'completed'");
-    const revenue = await pool.query("SELECT COALESCE(SUM(amount), 0) as total FROM transactions");
-    
-    res.json({
-      success: true,
-      totalUsers: parseInt(users.rows[0].count),
-      totalOrders: parseInt(orders.rows[0].count),
-      pendingOrders: parseInt(pending.rows[0].count),
-      completedOrders: parseInt(completed.rows[0].count),
-      totalRevenue: parseFloat(revenue.rows[0].total)
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// GET /api/admin/users — список пользователей
-router.get('/admin/users', async (req, res) => {
-  try {
-    const search = req.query.search || '';
-    const result = await pool.query(
-      "SELECT id, telegram_id, first_name, username, balance, role, is_blocked, referred_by, created_at FROM users WHERE first_name ILIKE $1 OR username ILIKE $1 OR telegram_id::text ILIKE $1 ORDER BY created_at DESC LIMIT 100",
-      [`%${search}%`]
-    );
-    res.json({ success: true, users: result.rows });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// POST /api/admin/user/block — заблокировать/разблокировать
-router.post('/admin/user/block', async (req, res) => {
-  const { userId, block } = req.body;
-  try {
-    await pool.query('UPDATE users SET is_blocked = $1 WHERE telegram_id = $2', [block, userId]);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// POST /api/admin/user/balance — изменить баланс
-router.post('/admin/user/balance', async (req, res) => {
-  const { userId, amount } = req.body;
-  try {
-    await pool.query('UPDATE users SET balance = balance + $1 WHERE telegram_id = $2', [amount, userId]);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// GET /api/admin/orders — все заказы с фильтрацией
-router.get('/admin/orders', async (req, res) => {
-  try {
-    const status = req.query.status || 'all';
-    let query = 'SELECT * FROM orders';
-    const params = [];
-    
-    if (status !== 'all') {
-      query += ' WHERE status = $1';
-      params.push(status);
-    }
-    
-    query += ' ORDER BY created_at DESC LIMIT 100';
-    
-    const result = await pool.query(query, params);
-    res.json({ success: true, orders: result.rows });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// POST /api/admin/order/refresh — ручное обновление статуса заказа
-router.post('/admin/order/refresh', async (req, res) => {
-  const { orderId } = req.body;
-  try {
-    const order = await pool.query('SELECT * FROM orders WHERE provider_order_id = $1', [orderId]);
-    if (order.rows.length === 0) {
-      return res.json({ success: false, error: 'Заказ не найден' });
-    }
-    
-    const status = await providerClient.getOrderStatus(orderId);
-    
-    let newStatus = order.rows[0].status;
-    if (status.error) {
-      newStatus = 'failed';
-    } else {
-      const s = status.status;
-      if (typeof s === 'string') {
-        const sl = s.toLowerCase();
-        if (sl.includes('complete')) newStatus = 'completed';
-        else if (sl.includes('cancel')) newStatus = 'cancelled';
-        else if (sl.includes('progress')) newStatus = 'in_progress';
-        else if (sl.includes('pending')) newStatus = 'pending';
-        else if (sl.includes('partial')) newStatus = 'completed';
-      }
-    }
-    
-    await pool.query('UPDATE orders SET status = $1 WHERE provider_order_id = $2', [newStatus, orderId]);
-    res.json({ success: true, newStatus });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// GET /api/admin/transactions — все транзакции
-router.get('/admin/transactions', async (req, res) => {
-  try {
-    const type = req.query.type || 'all';
-    let query = 'SELECT * FROM transactions';
-    const params = [];
-    
-    if (type !== 'all') {
-      query += ' WHERE type = $1';
-      params.push(type);
-    }
-    
-    query += ' ORDER BY created_at DESC LIMIT 100';
-    
-    const result = await pool.query(query, params);
-    res.json({ success: true, transactions: result.rows });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// GET /api/admin/settings — получить настройки
-router.get('/admin/settings', async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM settings WHERE key IN ('default_markup', 'min_deposit', 'max_deposit', 'ref_level1', 'ref_level2', 'ref_level3')");
-    const settings = {};
-    result.rows.forEach(r => { settings[r.key] = r.value; });
-    res.json({ success: true, settings });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// POST /api/admin/settings — сохранить настройки
-router.post('/admin/settings', async (req, res) => {
-  const { settings } = req.body;
-  try {
-    for (const [key, value] of Object.entries(settings)) {
-      await pool.query(
-        'INSERT INTO settings (key, value, description) VALUES ($1, $2, $3) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()',
-        [key, String(value), '']
-      );
-    }
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
 // POST /api/auto/create — создать план автопродвижения
 router.post('/auto/create', async (req, res) => {
   const { userId, platform, link, goal, dailyBudget } = req.body;
-
   if (!userId || !platform || !goal || !dailyBudget) {
     return res.status(400).json({ success: false, error: 'Все поля обязательны' });
   }
-
   try {
     const result = await pool.query(
       'INSERT INTO auto_plans (user_id, platform, link, goal, daily_budget) VALUES ($1, $2, $3, $4, $5) RETURNING *',
       [userId, platform, link || '', goal, dailyBudget]
     );
-
-    res.json({ 
-      success: true, 
-      plan: result.rows[0],
-      estimatedDays: Math.ceil(goal / (dailyBudget / 200))
-    });
+    res.json({ success: true, plan: result.rows[0], estimatedDays: Math.ceil(goal / (dailyBudget / 200)) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -416,10 +267,7 @@ router.post('/auto/create', async (req, res) => {
 // GET /api/auto/plans/:userId — получить планы пользователя
 router.get('/auto/plans/:userId', async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT * FROM auto_plans WHERE user_id = $1 AND status = 'active'",
-      [req.params.userId]
-    );
+    const result = await pool.query("SELECT * FROM auto_plans WHERE user_id = $1 AND status = 'active'", [req.params.userId]);
     res.json({ success: true, plans: result.rows });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
