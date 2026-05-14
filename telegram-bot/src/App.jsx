@@ -50,6 +50,8 @@ function App() {
   const [adminSearch, setAdminSearch] = useState('')
   const [adminOrders, setAdminOrders] = useState([])
   const [adminOrderStatus, setAdminOrderStatus] = useState('all')
+  const [adminTransactions, setAdminTransactions] = useState([])
+  const [adminTransType, setAdminTransType] = useState('all')
 
   const API_URL = 'https://boostix-o2ty.onrender.com/api'
 
@@ -174,6 +176,16 @@ function App() {
       const res = await fetch(`${API_URL}/orders/admin/orders?status=${adminOrderStatus}`)
       const data = await res.json()
       if (data.success) setAdminOrders(data.orders)
+    } catch {
+      // ignore
+    }
+  }
+
+  const loadAdminTransactions = async () => {
+    try {
+      const res = await fetch(`${API_URL}/orders/admin/transactions?type=${adminTransType}`)
+      const data = await res.json()
+      if (data.success) setAdminTransactions(data.transactions)
     } catch {
       // ignore
     }
@@ -483,21 +495,9 @@ function App() {
             )}
 
             <div className="referral-levels" style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 16, marginBottom: 16 }}>
-              <div className="ref-level-card">
-                <div className="ref-level-num">1 уровень</div>
-                <div className="ref-level-percent">10%</div>
-                <div className="ref-level-count">{refStats?.level1 || 0} чел.</div>
-              </div>
-              <div className="ref-level-card">
-                <div className="ref-level-num">2 уровень</div>
-                <div className="ref-level-percent">3%</div>
-                <div className="ref-level-count">{refStats?.level2 || 0} чел.</div>
-              </div>
-              <div className="ref-level-card">
-                <div className="ref-level-num">3 уровень</div>
-                <div className="ref-level-percent">2%</div>
-                <div className="ref-level-count">{refStats?.level3 || 0} чел.</div>
-              </div>
+              <div className="ref-level-card"><div className="ref-level-num">1 уровень</div><div className="ref-level-percent">10%</div><div className="ref-level-count">{refStats?.level1 || 0} чел.</div></div>
+              <div className="ref-level-card"><div className="ref-level-num">2 уровень</div><div className="ref-level-percent">3%</div><div className="ref-level-count">{refStats?.level2 || 0} чел.</div></div>
+              <div className="ref-level-card"><div className="ref-level-num">3 уровень</div><div className="ref-level-percent">2%</div><div className="ref-level-count">{refStats?.level3 || 0} чел.</div></div>
             </div>
 
             <div className="orders-history">
@@ -508,9 +508,7 @@ function App() {
                   <div className="order-card-header">
                     <span className="order-id" style={{ color: '#4ade80' }}>+{h.amount} ₽</span>
                   </div>
-                  <div className="order-card-body">
-                    <div className="order-link">{h.description}</div>
-                  </div>
+                  <div className="order-card-body"><div className="order-link">{h.description}</div></div>
                   <div className="order-card-date">{new Date(h.created_at).toLocaleString('ru-RU')}</div>
                 </div>
               ))}
@@ -545,10 +543,7 @@ function App() {
                       {!['pending','in_progress','completed','cancelled','failed'].includes(o.status) && '🔄 ' + o.status}
                     </span>
                   </div>
-                  <div className="order-card-body">
-                    <div className="order-link" title={o.link}>{o.link?.slice(0, 45)}{o.link?.length > 45 ? '...' : ''}</div>
-                    <div className="order-quantity">{o.quantity} шт</div>
-                  </div>
+                  <div className="order-card-body"><div className="order-link" title={o.link}>{o.link?.slice(0, 45)}{o.link?.length > 45 ? '...' : ''}</div><div className="order-quantity">{o.quantity} шт</div></div>
                   <div className="order-card-date">{new Date(o.created_at).toLocaleString('ru-RU')}</div>
                 </div>
               ))}
@@ -560,10 +555,11 @@ function App() {
           <div className="profile">
             <h2>⚙️ Админ-панель</h2>
             
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 13, background: adminSection === 'dashboard' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => setAdminSection('dashboard')}>📊 Дашборд</button>
-              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 13, background: adminSection === 'users' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('users'); loadAdminUsers() }}>👥 Пользователи</button>
-              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 13, background: adminSection === 'orders' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('orders'); loadAdminOrders() }}>📦 Заказы</button>
+            <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 12, background: adminSection === 'dashboard' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => setAdminSection('dashboard')}>📊</button>
+              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 12, background: adminSection === 'users' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('users'); loadAdminUsers() }}>👥</button>
+              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 12, background: adminSection === 'orders' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('orders'); loadAdminOrders() }}>📦</button>
+              <button style={{ flex: 1, marginTop: 0, padding: 10, fontSize: 12, background: adminSection === 'transactions' ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminSection('transactions'); loadAdminTransactions() }}>💰</button>
             </div>
 
             {adminSection === 'dashboard' && (
@@ -622,6 +618,35 @@ function App() {
                       <div className="order-card-body"><div className="order-link" title={o.link}>{o.link?.slice(0, 40)}</div><div className="order-quantity">{o.quantity} шт</div></div>
                       <div className="order-card-body"><div>👤 ID: {o.user_id}</div><div>{new Date(o.created_at).toLocaleString('ru-RU')}</div></div>
                       <button className="btn-primary" style={{ marginTop: 8, padding: '8px', fontSize: 12 }} onClick={() => refreshOrder(o.provider_order_id)}>🔄 Обновить статус</button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {adminSection === 'transactions' && (
+              <>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+                  {['all', 'deposit', 'referral', 'debit'].map(t => (
+                    <button key={t} style={{ flex: 1, padding: '8px 2px', fontSize: 11, background: adminTransType === t ? '#7c3aed' : '#1a1a1a', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer' }} onClick={() => { setAdminTransType(t); loadAdminTransactions() }}>
+                      {t === 'all' ? 'Все' : t === 'deposit' ? '💳' : t === 'referral' ? '👥' : '🛒'}
+                    </button>
+                  ))}
+                </div>
+                <div className="services-scroll" style={{ maxHeight: '500px' }}>
+                  {adminTransactions.map((t, i) => (
+                    <div key={i} className="order-card">
+                      <div className="order-card-header">
+                        <span className="order-id" style={{ color: t.type === 'referral' ? '#4ade80' : '#a78bfa' }}>{t.type === 'referral' ? '+' : '-'}{t.amount} ₽</span>
+                        <span className={`order-status-badge ${t.type === 'referral' ? 'completed' : 'pending'}`}>
+                          {t.type === 'deposit' && '💳 Пополнение'}
+                          {t.type === 'referral' && '👥 Реферал'}
+                          {t.type === 'debit' && '🛒 Списание'}
+                          {!['deposit','referral','debit'].includes(t.type) && t.type}
+                        </span>
+                      </div>
+                      <div className="order-card-body"><div className="order-link">{t.description || 'Нет описания'}</div><div>👤 {t.user_id}</div></div>
+                      <div className="order-card-date">{new Date(t.created_at).toLocaleString('ru-RU')}</div>
                     </div>
                   ))}
                 </div>

@@ -340,6 +340,27 @@ router.post('/admin/order/refresh', async (req, res) => {
   }
 });
 
+// GET /api/admin/transactions — все транзакции
+router.get('/admin/transactions', async (req, res) => {
+  try {
+    const type = req.query.type || 'all';
+    let query = 'SELECT * FROM transactions';
+    const params = [];
+    
+    if (type !== 'all') {
+      query += ' WHERE type = $1';
+      params.push(type);
+    }
+    
+    query += ' ORDER BY created_at DESC LIMIT 100';
+    
+    const result = await pool.query(query, params);
+    res.json({ success: true, transactions: result.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/auto/create — создать план автопродвижения
 router.post('/auto/create', async (req, res) => {
   const { userId, platform, link, goal, dailyBudget } = req.body;
