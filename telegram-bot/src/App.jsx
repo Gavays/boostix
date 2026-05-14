@@ -197,7 +197,7 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, block: !currentBlock })
     })
-    setTimeout(() => loadAdminUsers(), 500)
+    setTimeout(() => loadAdminUsers(), 1000)
   }
 
   const changeBalance = async (userId, amount) => {
@@ -206,7 +206,7 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, amount })
     })
-    setTimeout(() => loadAdminUsers(), 500)
+    setTimeout(() => loadAdminUsers(), 1000)
   }
 
   const refreshOrder = async (orderId) => {
@@ -215,7 +215,7 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderId })
     })
-    setTimeout(() => loadAdminOrders(), 500)
+    setTimeout(() => loadAdminOrders(), 1000)
   }
 
   const copyRefLink = () => {
